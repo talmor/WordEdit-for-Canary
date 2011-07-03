@@ -17,14 +17,10 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
-package com.sk89q.worldedit.bukkit;
-
-import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
 import com.sk89q.worldedit.Vector;
 import com.sk89q.worldedit.bags.*;
 
-public class BukkitPlayerBlockBag extends BlockBag {
+public class CanaryPlayerInventoryBlockBag extends BlockBag {
     /**
      * Player instance.
      */
@@ -32,14 +28,14 @@ public class BukkitPlayerBlockBag extends BlockBag {
     /**
      * The player's inventory;
      */
-    private ItemStack[] items;
+    private Item[] items;
     
     /**
      * Construct the object.
      * 
      * @param player
      */
-    public BukkitPlayerBlockBag(Player player) {
+    public CanaryPlayerInventoryBlockBag(Player player) {
         this.player = player;
     }
     
@@ -66,7 +62,6 @@ public class BukkitPlayerBlockBag extends BlockBag {
      *
      * @param id
      */
-    @Override
     public void fetchBlock(int id) throws BlockBagException {
         if (id == 0) {
             throw new IllegalArgumentException("Can't fetch air block");
@@ -77,11 +72,11 @@ public class BukkitPlayerBlockBag extends BlockBag {
         boolean found = false;
         
         for (int slot = 0; slot < items.length; slot++) {
-            ItemStack item = items[slot];
+            Item item = items[slot];
             
             if (item == null) continue;
             
-            if (item.getTypeId() == id) {
+            if (item.getItemId() == id) {
                 int amount = item.getAmount();
                 
                 // Unlimited
@@ -112,7 +107,6 @@ public class BukkitPlayerBlockBag extends BlockBag {
      * 
      * @param id
      */
-    @Override
     public void storeBlock(int id) throws BlockBagException {
         if (id == 0) {
             throw new IllegalArgumentException("Can't store air block");
@@ -124,7 +118,7 @@ public class BukkitPlayerBlockBag extends BlockBag {
         int freeSlot = -1;
         
         for (int slot = 0; slot < items.length; slot++) {
-            ItemStack item = items[slot];
+            Item item = items[slot];
             
             // Delay using up a free slot until we know there are no stacks
             // of this item to merge into
@@ -135,7 +129,7 @@ public class BukkitPlayerBlockBag extends BlockBag {
                 continue;
             }
             
-            if (item.getTypeId() == id) {
+            if (item.getItemId() == id) {
                 int amount = item.getAmount();
                 
                 // Unlimited
@@ -152,7 +146,7 @@ public class BukkitPlayerBlockBag extends BlockBag {
         }
 
         if (!found && freeSlot > -1) {
-            items[freeSlot] = new ItemStack(id, 1);
+            items[freeSlot] = new Item(id, 1);
             found = true;
         }
         
@@ -165,10 +159,9 @@ public class BukkitPlayerBlockBag extends BlockBag {
     /**
      * Flush any changes. This is called at the end.
      */
-    @Override
     public void flushChanges() {
         if (items != null) {
-            player.getInventory().setContents(items);
+            setContents(player.getInventory(), items);
             items = null;
         }
     }
@@ -177,17 +170,34 @@ public class BukkitPlayerBlockBag extends BlockBag {
      * Adds a position to be used a source.
      *
      * @param pos
+     * @return
      */
-    @Override
     public void addSourcePosition(Vector pos) {
     }
-    
     /**
      * Adds a position to be used a source.
      *
      * @param pos
+     * @return
      */
-    @Override
     public void addSingleSourcePosition(Vector pos) {
+    }
+    
+    /**
+     * Set the contents of an ItemArray.
+     * 
+     * @param itemArray
+     * @param contents
+     */
+    private static void setContents(Inventory itemArray, Item[] contents) {
+        int size = itemArray.getContentsSize();
+
+        for (int i = 0; i < size; i++) {
+            if (contents[i] == null) {
+                itemArray.removeItem(i);
+            } else {
+                itemArray.setSlot(contents[i], i);
+            }
+        }
     }
 }

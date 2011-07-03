@@ -17,26 +17,36 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
-package com.sk89q.worldedit.bukkit;
+import com.sk89q.worldedit.*;
 
-import org.bukkit.entity.Player;
-import com.sk89q.worldedit.LocalSession;
-
-public class WorldEditAPI  {
-    private WorldEditPlugin plugin;
-    
-    public WorldEditAPI(WorldEditPlugin plugin) {
-        this.plugin = plugin;
+/**
+ *
+ * @author sk89q
+ */
+public class CanaryServerInterface extends ServerInterface {
+    /**
+     * Resolves an item name to its ID.
+     * 
+     * @param name
+     * @return
+     */
+    public int resolveItem(String name) {
+        return etc.getDataSource().getItem(name);
     }
     
     /**
-     * Get the session for a player.
-     *
-     * @param player
+     * Checks if a mob type is valid.
+     * 
+     * @param type
      * @return
      */
-    public LocalSession getSession(Player player) {
-        return plugin.getWorldEdit().getSession(
-                new BukkitPlayer(plugin, plugin.getServerInterface(), player));
+    public boolean isValidMobType(String type) {
+        return Mob.isValid(type);
     }
+
+	@Override
+	public void reload() {
+		// TODO Auto-generated method stub
+		
+	}
 }

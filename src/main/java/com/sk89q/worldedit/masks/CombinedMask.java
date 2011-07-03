@@ -49,7 +49,7 @@ public class CombinedMask implements Mask {
 
     public boolean matches(EditSession editSession, Vector pos) {
         for (Mask mask : masks) {
-            if (!mask.matches(editSession, pos)) {
+            if (mask != null && !mask.matches(editSession, pos)) {
                 return false;
             }
         }
