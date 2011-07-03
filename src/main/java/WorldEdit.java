@@ -93,7 +93,7 @@ public class WorldEdit extends Plugin {
      * @return
      */
     public String getVersion() {
-        version = "4.7-SNAPSHOT-Canary Beta2";
+        version = "4.7-SNAPSHOT-Canary Beta3";
         if (version != null) {
             return version;
         }

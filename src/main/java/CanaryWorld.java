@@ -15,7 +15,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
-*/
+ */
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -35,20 +35,21 @@ import com.sk89q.worldedit.regions.Region;
  * @author sk89q
  */
 public class CanaryWorld extends LocalWorld {
-	private World world;
+    private World world;
     /**
      * Logger.
      */
     private final Logger logger = Logger.getLogger("Minecraft.WorldEdit");
-    
+
     /**
      * Construct the object.
+     * 
      * @param world
      */
     public CanaryWorld(World world) {
         this.world = world;
     }
-    
+
     /**
      * Get the world handle.
      * 
@@ -57,65 +58,63 @@ public class CanaryWorld extends LocalWorld {
     public World getWorld() {
         return world;
     }
-    
+
     /**
      * Set block type.
-     *
+     * 
      * @param pt
      * @param type
      * @return
      */
     public boolean setBlockType(Vector pt, int type) {
         // Can't set colored cloth or crash
+        /*
         if ((type >= 21 && type <= 34) || type == 36) {
             return false;
         }
-        return world.setBlockAt(type, pt.getBlockX(), pt.getBlockY(),
-                pt.getBlockZ());
+        */
+        return world.setBlockAt(type, pt.getBlockX(), pt.getBlockY(), pt.getBlockZ());
     }
-    
+
     /**
      * Get block type.
-     *
+     * 
      * @param pt
      * @return
      */
     public int getBlockType(Vector pt) {
-        return world.getBlockIdAt(pt.getBlockX(), pt.getBlockY(),
-                pt.getBlockZ());
+        return world.getBlockIdAt(pt.getBlockX(), pt.getBlockY(), pt.getBlockZ());
     }
 
     /**
      * Set block data.
-     *
+     * 
      * @param pt
      * @param data
      * @return
      */
     public void setBlockData(Vector pt, int data) {
-    	world.getBlockAt(pt.getBlockX(), pt.getBlockY(), pt.getBlockZ()).setData((byte)data);
+        world.setBlockData(pt.getBlockX(), pt.getBlockY(), pt.getBlockZ(), data);
     }
 
     /**
      * Get block data.
-     *
+     * 
      * @param pt
      * @return
      */
-    public int getBlockData(Vector pt) {        
-        return world.getBlockData(pt.getBlockX(), pt.getBlockY(),
-                pt.getBlockZ());
+    public int getBlockData(Vector pt) {
+        return world.getBlockData(pt.getBlockX(), pt.getBlockY(), pt.getBlockZ());
     }
-    
+
     /**
      * Set sign text.
-     *
+     * 
      * @param pt
      * @param text
      */
     public void setSignText(Vector pt, String[] text) {
-        Sign signData = (Sign)world.getComplexBlock(
-                pt.getBlockX(), pt.getBlockY(), pt.getBlockZ());
+        Sign signData = (Sign) world.getComplexBlock(pt.getBlockX(), pt.getBlockY(), pt.getBlockZ());
         if (signData == null) {
             return;
         }
@@ -124,18 +123,17 @@ public class CanaryWorld extends LocalWorld {
         }
         signData.update();
     }
-    
+
     /**
      * Get sign text.
-     *
+     * 
      * @param pt
      * @return
      */
     public String[] getSignText(Vector pt) {
-        Sign signData = (Sign)world.getComplexBlock(
-                pt.getBlockX(), pt.getBlockY(), pt.getBlockZ());
+        Sign signData = (Sign) world.getComplexBlock(pt.getBlockX(), pt.getBlockY(), pt.getBlockZ());
         if (signData == null) {
-            return new String[]{"", "", "", ""};
+            return new String[] { "", "", "", "" };
         }
         String[] text = new String[4];
         for (byte i = 0; i < 4; i++) {
@@ -147,19 +145,18 @@ public class CanaryWorld extends LocalWorld {
     /**
      * Gets the contents of chests. Will return null if the chest does not
      * really exist or it is the second block for a double chest.
-     *
+     * 
      * @param pt
      * @return
      */
     public BaseItemStack[] getChestContents(Vector pt) {
-        ComplexBlock cblock = world.getOnlyComplexBlock(
-                pt.getBlockX(), pt.getBlockY(), pt.getBlockZ());
+        ComplexBlock cblock = world.getOnlyComplexBlock(pt.getBlockX(), pt.getBlockY(), pt.getBlockZ());
 
         BaseItemStack[] items;
         Item[] nativeItems;
 
         if (cblock instanceof Chest) {
-            Chest chest = (Chest)cblock;
+            Chest chest = (Chest) cblock;
             nativeItems = chest.getContents();
         } else {
             return null;
@@ -169,10 +166,9 @@ public class CanaryWorld extends LocalWorld {
 
         for (byte i = 0; i < nativeItems.length; i++) {
             Item item = nativeItems[i];
-            
+
             if (item != null) {
-                items[i] = new BaseItemStack((short)item.getItemId(),
-                        item.getAmount(), (short)item.getDamage());
+                items[i] = new BaseItemStack((short) item.getItemId(), item.getAmount(), (short) item.getDamage());
             }
         }
 
@@ -181,33 +177,30 @@ public class CanaryWorld extends LocalWorld {
 
     /**
      * Sets a chest slot.
-     *
+     * 
      * @param pt
      * @param contents
      * @return
      */
-    public boolean setChestContents(Vector pt,
-            BaseItemStack[] contents) {
-        
-        ComplexBlock cblock = world.getOnlyComplexBlock(
-                pt.getBlockX(), pt.getBlockY(), pt.getBlockZ());
+    public boolean setChestContents(Vector pt, BaseItemStack[] contents) {
+
+        ComplexBlock cblock = world.getOnlyComplexBlock(pt.getBlockX(), pt.getBlockY(), pt.getBlockZ());
 
         if (cblock instanceof Chest) {
-            Chest chest = (Chest)cblock;
+            Chest chest = (Chest) cblock;
             Item[] nativeItems = new Item[contents.length];
-            
+
             for (int i = 0; i < contents.length; i++) {
                 BaseItemStack item = contents[i];
-                
+
                 if (item != null) {
-                    
-                    Item nativeItem =
-                        new Item(item.getType(), item.getAmount());
+
+                    Item nativeItem = new Item(item.getType(), item.getAmount());
                     nativeItem.setDamage(item.getDamage());
                     nativeItems[i] = nativeItem;
                 }
             }
-            
+
             setContents(chest, nativeItems);
         }
 
@@ -220,20 +213,18 @@ public class CanaryWorld extends LocalWorld {
      * @param pt
      */
     public boolean clearChest(Vector pt) {
-        ComplexBlock cblock = world.getOnlyComplexBlock(
-                pt.getBlockX(), pt.getBlockY(), pt.getBlockZ());
+        ComplexBlock cblock = world.getOnlyComplexBlock(pt.getBlockX(), pt.getBlockY(), pt.getBlockZ());
 
         if (cblock instanceof Chest) {
-            Chest chest = (Chest)cblock;
+            Chest chest = (Chest) cblock;
             chest.clearContents();
             chest.update();
             return true;
         }
 
-
         return false;
     }
-    
+
     /**
      * Set the contents of an ItemArray.
      * 
@@ -247,34 +238,32 @@ public class CanaryWorld extends LocalWorld {
             if (contents[i] == null) {
                 itemArray.removeItem(i);
             } else {
-                itemArray.setSlot(contents[i].getItemId(),
-                        contents[i].getAmount(), contents[i].getDamage(), i);
+                itemArray.setSlot(contents[i].getItemId(), contents[i].getAmount(), contents[i].getDamage(), i);
             }
         }
     }
 
     /**
      * Set mob spawner mob type.
-     *
+     * 
      * @param pt
      * @param mobType
      */
     public void setMobSpawnerType(Vector pt, String mobType) {
-        ComplexBlock cblock = getWorld().getComplexBlock(
-                pt.getBlockX(), pt.getBlockY(), pt.getBlockZ());
+        ComplexBlock cblock = getWorld().getComplexBlock(pt.getBlockX(), pt.getBlockY(), pt.getBlockZ());
 
         if (!(cblock instanceof MobSpawner)) {
             return;
         }
 
-        MobSpawner mobSpawner = (MobSpawner)cblock;
+        MobSpawner mobSpawner = (MobSpawner) cblock;
         mobSpawner.setSpawn(mobType);
         mobSpawner.update();
     }
 
     /**
      * Get mob spawner mob type. May return an empty string.
-     *
+     * 
      * @param pt
      * @param mobType
      */
@@ -289,9 +278,8 @@ public class CanaryWorld extends LocalWorld {
         try {
             return MinecraftServerInterface.generateTree(editSession, pt);
         } catch (Throwable t) {
-            logger.log(Level.SEVERE, 
-                    "Failed to create tree (do you need to update WorldEdit " +
-                    "due to a Minecraft update?)", t);
+            logger.log(Level.SEVERE, "Failed to create tree (do you need to update WorldEdit "
+                    + "due to a Minecraft update?)", t);
             return false;
         }
     }
@@ -306,27 +294,24 @@ public class CanaryWorld extends LocalWorld {
         try {
             return MinecraftServerInterface.generateBigTree(editSession, pt);
         } catch (Throwable t) {
-            logger.log(Level.SEVERE, 
-                    "Failed to create big tree (do you need to update WorldEdit " +
-                    "due to a Minecraft update?)", t);
+            logger.log(Level.SEVERE, "Failed to create big tree (do you need to update WorldEdit "
+                    + "due to a Minecraft update?)", t);
             return false;
         }
     }
 
     /**
      * Drop an item.
-     *
+     * 
      * @param pt
      * @param type
      * @param count
      * @param times
      */
     public void dropItem(Vector pt, int type, int count) {
-    	etc.getServer().getWorld(1).dropItem(pt.getBlockX(), pt.getBlockY(), pt.getBlockZ(),
-                type, count);
+        etc.getServer().getWorld(1).dropItem(pt.getBlockX(), pt.getBlockY(), pt.getBlockZ(), type, count);
     }
-        
-    
+
     /**
      * Kill mobs in an area.
      * 
@@ -336,28 +321,26 @@ public class CanaryWorld extends LocalWorld {
      */
     public int killMobs(Vector origin, int radius) {
         int killed = 0;
-        
+
         for (Mob mob : etc.getServer().getWorld(1).getMobList()) {
             Vector mobPos = new Vector(mob.getX(), mob.getY(), mob.getZ());
-            if (mob.getHealth() > 0
-                    && (radius == -1 || mobPos.distance(origin) <= radius)) {
+            if (mob.getHealth() > 0 && (radius == -1 || mobPos.distance(origin) <= radius)) {
                 mob.setHealth(0);
                 killed++;
             }
         }
-        
+
         for (Mob mob : etc.getServer().getWorld(1).getAnimalList()) {
             Vector mobPos = new Vector(mob.getX(), mob.getY(), mob.getZ());
-            if (mob.getHealth() > 0
-                    && (radius == -1 || mobPos.distance(origin) <= radius)) {
+            if (mob.getHealth() > 0 && (radius == -1 || mobPos.distance(origin) <= radius)) {
                 mob.setHealth(0);
                 killed++;
             }
         }
-        
+
         return killed;
     }
-    
+
     @Override
     public boolean equals(Object other) {
         if (other instanceof CanaryWorld) {
@@ -404,7 +387,7 @@ public class CanaryWorld extends LocalWorld {
     @Override
     public boolean generateBirchTree(EditSession editSession, Vector pt) throws MaxChangedBlocksException {
         // TODO Auto-generated method stub
-        
+
         return false;
     }
 
@@ -422,28 +405,27 @@ public class CanaryWorld extends LocalWorld {
 
     @Override
     public void dropItem(Vector pt, BaseItemStack item) {
-        world.dropItem(CanaryUtil.toLocation(world,pt), item.getType(), item.getAmount());        
+        world.dropItem(CanaryUtil.toLocation(world, pt), item.getType(), item.getAmount());
     }
 
     @Override
     public int killMobs(Vector origin, int radius, boolean killPets) {
         int num = 0;
         double radiusSq = Math.pow(radius, 2);
-        for (LivingEntity ent : world.getLivingEntityList()) {  
+        for (LivingEntity ent : world.getLivingEntityList()) {
             OEntity oent = ent.entity;
             if (!killPets && oent instanceof OEntityWolf && ((OEntityWolf) oent).A()) {
                 continue; // tamed wolf
             }
             if (oent instanceof OEntityCreature || oent instanceof OEntityGhast || oent instanceof OEntitySlime) {
-                WorldVector vector = new WorldVector(this,ent.getX(),ent.getY(),ent.getZ());
-                if (radius == -1
-                        || origin.distanceSq(vector) <= radiusSq) {
+                WorldVector vector = new WorldVector(this, ent.getX(), ent.getY(), ent.getZ());
+                if (radius == -1 || origin.distanceSq(vector) <= radiusSq) {
                     oent.bh = true;
                     num++;
                 }
             }
         }
-        
+
         return num;
     }
 
@@ -451,11 +433,11 @@ public class CanaryWorld extends LocalWorld {
     public int removeEntities(EntityType type, Vector origin, int radius) {
         int num = 0;
         double radiusSq = Math.pow(radius, 2);
-        for (BaseEntity ent: world.getEntityList()) {
-            WorldVector vector = new WorldVector(this,ent.getX(),ent.getY(),ent.getZ());
-            if (radius != -1 && origin.distanceSq(vector) > radiusSq) {                
+        for (BaseEntity ent : world.getEntityList()) {
+            WorldVector vector = new WorldVector(this, ent.getX(), ent.getY(), ent.getZ());
+            if (radius != -1 && origin.distanceSq(vector) > radiusSq) {
                 continue;
-            }            
+            }
             if (type == EntityType.ARROWS) {
                 if (ent.entity instanceof OEntityArrow) {
                     ent.entity.bh = true;
@@ -487,7 +469,7 @@ public class CanaryWorld extends LocalWorld {
                     num++;
                 }
             }
-        }            
+        }
         return num;
     }
 }
