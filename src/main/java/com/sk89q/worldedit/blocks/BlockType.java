@@ -60,10 +60,14 @@ public enum BlockType {
     BED(26, "Bed", "bed"),
     POWERED_RAIL(27, "Powered Rail", "poweredrail", "boosterrail", "poweredtrack", "boostertrack", "booster"),
     DETECTOR_RAIL(28, "Detector Rail", "detectorrail", "detector"),
+    PISTON_STICKY_BASE(29, "Sticky Piston", "stickypiston"),
     WEB(30, "Web", "web", "spiderweb"),
     LONG_GRASS(31, "Long grass", "longgrass", "tallgrass"),
     DEAD_BUSH(32, "Shrub", "deadbush", "shrub", "deadshrub", "tumbleweed"),
+    PISTON_BASE(33, "Piston", "piston"),
+    PISTON_EXTENSION(34, "Piston extension", "pistonextendsion", "pistonhead"),
     CLOTH(35, "Wool", "cloth", "wool"),
+    PISTON_MOVING_PIECE(36, "Piston moving piece", "movingpiston"),
     YELLOW_FLOWER(37, "Yellow flower", "yellowflower", "flower"),
     RED_FLOWER(38, "Red rose", "redflower", "redrose", "rose"),
     BROWN_MUSHROOM(39, "Brown mushroom", "brownmushroom", "mushroom"),
@@ -159,7 +163,9 @@ public enum BlockType {
         blockDrops.put(27, 27);
         blockDrops.put(28, 28);
         blockDrops.put(30, 30);
+        blockDrops.put(34, -1);
         blockDrops.put(35, 35);
+        blockDrops.put(36, -1);
         blockDrops.put(37, 37);
         blockDrops.put(38, 38);
         blockDrops.put(39, 39);
@@ -452,7 +458,10 @@ public enum BlockType {
                 || id == 26 // Bed
                 || id == 27 // Powered rails
                 || id == 28 // Detector rails
+                || id == 29 // Sticky piston
                 || id == 31 // Tall grass
+                || id == 33 // Piston
+                || id == 34 // Piston extension
                 || id == 35 // Wool
                 || id == 43 // Double slab
                 || id == 44 // Slab
@@ -508,6 +517,8 @@ public enum BlockType {
     public static boolean isRedstoneBlock(int id) {
         return id == 27 // Powered rail
                 || id == 28 // Detector rail
+                || id == 29 // Sticky piston
+                || id == 33 // Piston
                 || id == 69 // Lever
                 || id == 70 // Stone pressure plate
                 || id == 72 // Wood pressure plate
