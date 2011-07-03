@@ -54,6 +54,7 @@ public final class BlockID {
     public static final int BED = 26;
     public static final int POWERED_RAIL = 27;
     public static final int DETECTOR_RAIL = 28;
+    public static final int PISTON_STICKY_BASE = 29;
     public static final int WEB = 30;
     public static final int LONG_GRASS = 31;
     public static final int DEAD_BUSH = 32;
