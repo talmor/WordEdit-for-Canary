@@ -372,19 +372,124 @@ public class CanaryWorld extends LocalWorld {
 
     @Override
     public boolean copyToWorld(Vector pt, BaseBlock block) {
+        // Signs
+        if (block instanceof SignBlock) {
+            setSignText(pt, ((SignBlock) block).getText());
+            return true;
+
+            // Furnaces
+        } else if (block instanceof FurnaceBlock) {
+            ComplexBlock complexBlock = world.getComplexBlock(pt.getBlockX(), pt.getBlockY(), pt.getBlockZ());
+            if (complexBlock == null)
+                return false;
+            if (!(complexBlock instanceof Furnace))
+                return false;
+            // Furnace furnace = (Furnace) complexBlock;
+            // TODO: Implement workaround for Canary
+            // furnace.setBurnTime(we.getBurnTime());
+            // furnace.setCookTime(we.getCookTime());
+            return setContainerBlockContents(pt, ((ContainerBlock) block).getItems());
+
+            // Chests/dispenser
+        } else if (block instanceof ContainerBlock) {
+            return setContainerBlockContents(pt, ((ContainerBlock) block).getItems());
+
+            // Mob spawners
+        } else if (block instanceof MobSpawnerBlock) {
+            ComplexBlock complexBlock = world.getComplexBlock(pt.getBlockX(), pt.getBlockY(), pt.getBlockZ());
+            if (complexBlock == null)
+                return false;
+            if (!(complexBlock instanceof MobSpawner))
+                return false;
+            MobSpawner ms = (MobSpawner) complexBlock;
+            MobSpawnerBlock we = (MobSpawnerBlock) block;
+            ms.setSpawn(we.getMobType());
+            ms.setDelay(we.getDelay());
+            return true;
+
+            // Note block
+        } else if (block instanceof NoteBlock) {
+            OTileEntity entity = world.getWorld().n(pt.getBlockX(), pt.getBlockY(), pt.getBlockZ());
+            if (!(entity instanceof OTileEntityNote)) {
+                return false;
+            }
+            OTileEntityNote note = (OTileEntityNote) entity;
+            NoteBlock we = (NoteBlock) block;
+            note.a = we.getNote();
+        }
+
         return false;
     }
 
     @Override
     public boolean copyFromWorld(Vector pt, BaseBlock block) {
-        // TODO Auto-generated method stub
+        // Signs
+        if (block instanceof SignBlock) {
+            ((SignBlock) block).setText(getSignText(pt));
+            return true;
+
+            // Furnaces
+        } else if (block instanceof FurnaceBlock) {
+            ComplexBlock complexBlock = world.getComplexBlock(pt.getBlockX(), pt.getBlockY(), pt.getBlockZ());
+            if (complexBlock == null)
+                return false;
+            if (!(complexBlock instanceof Furnace))
+                return false;
+
+            Furnace furnace = (Furnace) complexBlock;
+            FurnaceBlock we = (FurnaceBlock) block;
+            // TODO: Not implemented in Canary. Find workaround
+            // we.setBurnTime(furnace.getBurnTime());
+            // we.setCookTime(furnace.getCookTime());
+            ((ContainerBlock) block).setItems(getContainerBlockContents(pt));
+            return true;
+
+            // Chests/dispenser
+        } else if (block instanceof ContainerBlock) {
+            ((ContainerBlock) block).setItems(getContainerBlockContents(pt));
+            return true;
+
+            // Mob spawners
+        } else if (block instanceof MobSpawnerBlock) {
+            ComplexBlock complexBlock = world.getComplexBlock(pt.getBlockX(), pt.getBlockY(), pt.getBlockZ());
+            if (complexBlock == null)
+                return false;
+            if (!(complexBlock instanceof MobSpawner))
+                return false;
+            MobSpawner ms = (MobSpawner) complexBlock;
+            MobSpawnerBlock we = (MobSpawnerBlock) block;
+            we.setMobType(ms.getSpawn());
+            we.setDelay((short) ms.spawner.a);
+            return true;
+
+            // Note block
+        } else if (block instanceof NoteBlock) {
+            OTileEntity entity = world.getWorld().n(pt.getBlockX(), pt.getBlockY(), pt.getBlockZ());
+            if (!(entity instanceof OTileEntityNote)) {
+                return false;
+            }
+            OTileEntityNote note = (OTileEntityNote) entity;
+            NoteBlock we = (NoteBlock) block;
+            we.setNote(note.a);
+            return true;
+        }
+
         return false;
     }
 
     @Override
     public boolean clearContainerBlockContents(Vector pt) {
-        // TODO Auto-generated method stub
-        return false;
+        ComplexBlock block = world.getComplexBlock(pt.getBlockX(), pt.getBlockY(), pt.getBlockZ());
+        if (block == null) {
+            return false;
+        }
+        if (!(block instanceof BaseContainerBlock)) {
+            return false;
+        }
+        BaseContainerBlock container = (BaseContainerBlock) block;
+
+        container.clearContents();
+        return true;
     }
 
     @Override
@@ -488,5 +593,74 @@ public class CanaryWorld extends LocalWorld {
             }
         }
         return num;
+    }
+
+    /**
+     * Get a container block's contents.
+     * 
+     * @param pt
+     * @return
+     */
+    @SuppressWarnings("rawtypes")
+    private BaseItemStack[] getContainerBlockContents(Vector pt) {
+        ComplexBlock block = world.getComplexBlock(pt.getBlockX(), pt.getBlockY(), pt.getBlockZ());
+        if (block == null) {
+            return new BaseItemStack[0];
+        }
+
+        if (!(block instanceof BaseContainerBlock)) {
+            return new BaseItemStack[0];
+        }
+
+        BaseContainerBlock container = (BaseContainerBlock) block;
+        int size = container.getContentsSize();
+        BaseItemStack[] contents = new BaseItemStack[size];
+
+        for (int i = 0; i < size; i++) {
+            Item stack = container.getItemFromSlot(i);
+            if (stack != null) {
+                if (stack.getItemId() > 0) {
+                    contents[i] = new BaseItemStack(stack.getItemId(), stack.getAmount(), (short) stack.getDamage());
+                }
+            }
+        }
+
+        return contents;
+    }
+
+    /**
+     * Set a container block's contents.
+     * 
+     * @param pt
+     * @param contents
+     * @return
+     */
+    @SuppressWarnings("rawtypes")
+    private boolean setContainerBlockContents(Vector pt, BaseItemStack[] contents) {
+        ComplexBlock block = world.getComplexBlock(pt.getBlockX(), pt.getBlockY(), pt.getBlockZ());
+        if (block == null) {
+            return false;
+        }
+
+        if (!(block instanceof BaseContainerBlock)) {
+            return false;
+        }
+
+        BaseContainerBlock container = (BaseContainerBlock) block;
+
+        int size = container.getContentsSize();
+        container.clearContents();
+
+        for (int i = 0; i < size; i++) {
+            if (i >= contents.length) {
+                break;
+            }
+
+            if (contents[i] != null) {
+                container.setSlot(contents[i].getType(), contents[i].getAmount(), (byte) contents[i].getDamage(), i);
+            }
+        }
+
+        return true;
     }
 }
