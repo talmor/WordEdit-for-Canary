@@ -386,21 +386,35 @@ public class CanaryWorld extends LocalWorld {
 
     @Override
     public boolean generateBirchTree(EditSession editSession, Vector pt) throws MaxChangedBlocksException {
-        // TODO Auto-generated method stub
-
-        return false;
+        try {
+            return MinecraftServerInterface.generateBirchTree(editSession, pt);
+        } catch (Throwable t) {
+            logger.log(Level.SEVERE, "Failed to create birch tree (do you need to update WorldEdit "
+                    + "due to a Minecraft update?)", t);
+            return false;
+        }
     }
 
     @Override
     public boolean generateRedwoodTree(EditSession editSession, Vector pt) throws MaxChangedBlocksException {
-        // TODO Auto-generated method stub
-        return false;
+        try {
+            return MinecraftServerInterface.generateRedwoodTree(editSession, pt);
+        } catch (Throwable t) {
+            logger.log(Level.SEVERE, "Failed to create Redwood tree (do you need to update WorldEdit "
+                    + "due to a Minecraft update?)", t);
+            return false;
+        }
     }
 
     @Override
     public boolean generateTallRedwoodTree(EditSession editSession, Vector pt) throws MaxChangedBlocksException {
-        // TODO Auto-generated method stub
-        return false;
+        try {
+            return MinecraftServerInterface.generateTallRedwoodTree(editSession, pt);
+        } catch (Throwable t) {
+            logger.log(Level.SEVERE, "Failed to create tall redwood tree (do you need to update WorldEdit "
+                    + "due to a Minecraft update?)", t);
+            return false;
+        }
     }
 
     @Override

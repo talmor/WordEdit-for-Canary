@@ -62,6 +62,23 @@ public class MinecraftSetBlockProxy extends OWorld {
     }
 
     /**
+     * Called to set a block.
+     * 
+     * @param x
+     * @param y
+     * @param z
+     * @param blockType
+     * @param blockData
+     * @return
+     */
+    public boolean a(int x, int y, int z,int blockType,int blockData) {
+        try {
+            return editSession.setBlock(new Vector(x, y, z), new BaseBlock(blockType,blockData));
+        } catch (MaxChangedBlocksException ex) {
+            return false;
+        }
+    }
+    /**
      * Called to get a block.
      * 
      * @param x

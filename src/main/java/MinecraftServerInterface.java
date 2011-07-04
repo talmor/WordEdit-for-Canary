@@ -15,7 +15,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
-*/
+ */
 
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -25,7 +25,7 @@ import sun.reflect.ReflectionFactory;
 import com.sk89q.worldedit.*;
 
 /**
- *
+ * 
  * @author sk89q
  */
 public class MinecraftServerInterface {
@@ -44,31 +44,28 @@ public class MinecraftServerInterface {
 
     /**
      * Perform world generation at a location.
-     *
+     * 
      * @param pt
      * @return
      */
-    private static boolean performWorldGen(EditSession editSession, Vector pt,
-    		OWorldGenerator worldGen) {
+    private static boolean performWorldGen(EditSession editSession, Vector pt, OWorldGenerator worldGen) {
         if (proxy == null) {
             try {
                 proxy = createNoConstructor(MinecraftSetBlockProxy.class);
             } catch (Throwable t) {
-                logger.log(Level.WARNING, "setBlock() proxy class failed to construct",
-                        t);
+                logger.log(Level.WARNING, "setBlock() proxy class failed to construct", t);
                 return false;
             }
         }
         proxy.setEditSession(editSession);
 
         OWorldGenerator gen = worldGen;
-        return gen.a(proxy, random,
-                pt.getBlockX(), pt.getBlockY() + 1, pt.getBlockZ());
+        return gen.a(proxy, random, pt.getBlockX(), pt.getBlockY(), pt.getBlockZ());
     }
 
     /**
      * Generate a tree at a location.
-     *
+     * 
      * @param pt
      * @return
      */
@@ -78,7 +75,7 @@ public class MinecraftServerInterface {
 
     /**
      * Generate a big tree at a location.
-     *
+     * 
      * @param pt
      * @return
      */
@@ -86,11 +83,9 @@ public class MinecraftServerInterface {
         return performWorldGen(editSession, pt, new OWorldGenBigTree());
     }
 
-    
-
     /**
      * Instantiate a class without calling its constructor.
-     *
+     * 
      * @param <T>
      * @param clazz
      * @return
@@ -101,12 +96,22 @@ public class MinecraftServerInterface {
         try {
             ReflectionFactory factory = ReflectionFactory.getReflectionFactory();
             Constructor objectConstructor = Object.class.getDeclaredConstructor();
-            Constructor c = factory.newConstructorForSerialization(
-                clazz, objectConstructor
-            );
+            Constructor c = factory.newConstructorForSerialization(clazz, objectConstructor);
             return clazz.cast(c.newInstance());
         } catch (Throwable e) {
             throw e;
         }
+    }
+
+    public static boolean generateBirchTree(EditSession editSession, Vector pt) {
+        return performWorldGen(editSession, pt, new OWorldGenForest());
+    }
+
+    public static boolean generateRedwoodTree(EditSession editSession, Vector pt) {
+        return performWorldGen(editSession, pt, new OWorldGenTaiga2());
+    }
+
+    public static boolean generateTallRedwoodTree(EditSession editSession, Vector pt) {
+        return performWorldGen(editSession, pt, new OWorldGenTaiga1());
     }
 }
