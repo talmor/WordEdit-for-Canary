@@ -93,21 +93,26 @@ public class WorldEdit extends Plugin {
      * @return
      */
     public String getVersion() {
-        version = "4.7-SNAPSHOT-Canary Beta5";
         if (version != null) {
             return version;
         }
 
-        /*
-         * Package p = WorldEdit.class.getPackage();
-         * 
-         * if (p == null) { p = Package.getPackage("com.sk89q.worldedit"); }
-         * 
-         * if (p == null) { version = "3.0"; } else { version =
-         * p.getImplementationVersion();
-         * 
-         * if (version == null) { version = "3.0"; } } version = "3.01Canary";
-         */
+        Package p = WorldEdit.class.getPackage();
+
+        if (p == null) {
+            p = Package.getPackage("com.sk89q.worldedit");
+        }
+
+        if (p == null) {
+            version = "4.7-SNAPSHOT-Canary Beta6";
+        } else {
+            version = p.getImplementationVersion();
+
+            if (version == null) {
+                version = "4.7-SNAPSHOT-Canary Beta6";
+            }
+        }
+
         return version;
     }
 
