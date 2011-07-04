@@ -171,9 +171,9 @@ public class CanaryWorldEditListener extends PluginListener {
      * @param player
      * @return
      */
-    //public LocalSession _bridgeSession(Player player) {
-    //    return controller.getBridgeSession(wrapPlayer(player));
-    // }
+    public LocalSession _bridgeSession(Player player) {
+        return controller.getSession(wrapPlayer(player));
+    }
     
     /**
      * Wrap a hMod player for WorldEdit.
