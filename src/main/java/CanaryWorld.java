@@ -17,6 +17,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import com.sk89q.worldedit.EditSession;
@@ -24,9 +25,15 @@ import com.sk89q.worldedit.EntityType;
 import com.sk89q.worldedit.LocalWorld;
 import com.sk89q.worldedit.MaxChangedBlocksException;
 import com.sk89q.worldedit.Vector;
+import com.sk89q.worldedit.Vector2D;
 import com.sk89q.worldedit.WorldVector;
 import com.sk89q.worldedit.blocks.BaseBlock;
 import com.sk89q.worldedit.blocks.BaseItemStack;
+import com.sk89q.worldedit.blocks.ContainerBlock;
+import com.sk89q.worldedit.blocks.FurnaceBlock;
+import com.sk89q.worldedit.blocks.MobSpawnerBlock;
+import com.sk89q.worldedit.blocks.NoteBlock;
+import com.sk89q.worldedit.blocks.SignBlock;
 import com.sk89q.worldedit.regions.Region;
 
 /**
@@ -69,10 +76,8 @@ public class CanaryWorld extends LocalWorld {
     public boolean setBlockType(Vector pt, int type) {
         // Can't set colored cloth or crash
         /*
-        if ((type >= 21 && type <= 34) || type == 36) {
-            return false;
-        }
-        */
+         * if ((type >= 21 && type <= 34) || type == 36) { return false; }
+         */
         return world.setBlockAt(type, pt.getBlockX(), pt.getBlockY(), pt.getBlockZ());
     }
 
@@ -362,13 +367,11 @@ public class CanaryWorld extends LocalWorld {
 
     @Override
     public boolean regenerate(Region region, EditSession editSession) {
-        // TODO Auto-generated method stub
         return false;
     }
 
     @Override
     public boolean copyToWorld(Vector pt, BaseBlock block) {
-        // TODO Auto-generated method stub
         return false;
     }
 
@@ -427,14 +430,14 @@ public class CanaryWorld extends LocalWorld {
         int num = 0;
         double radiusSq = Math.pow(radius, 2);
         for (LivingEntity ent : world.getLivingEntityList()) {
-            OEntity oent = ent.entity;
+            OEntity oent = ent.getEntity();
             if (!killPets && oent instanceof OEntityWolf && ((OEntityWolf) oent).A()) {
                 continue; // tamed wolf
             }
             if (oent instanceof OEntityCreature || oent instanceof OEntityGhast || oent instanceof OEntitySlime) {
                 WorldVector vector = new WorldVector(this, ent.getX(), ent.getY(), ent.getZ());
                 if (radius == -1 || origin.distanceSq(vector) <= radiusSq) {
-                    oent.bh = true;
+                    ent.setHealth(0);
                     num++;
                 }
             }
