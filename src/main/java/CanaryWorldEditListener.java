@@ -126,6 +126,7 @@ public class CanaryWorldEditListener extends PluginListener {
     @Override
     public boolean onCommand(Player player, String[] split) {
         // Fixed: WorlEdit removes initial / from command
+        System.out.println(split[0]);
         String[] cmd = new String[split.length];
         System.arraycopy(split, 0, cmd, 0, split.length);        
         return controller.handleCommand(wrapPlayer(player), cmd);
@@ -175,6 +176,11 @@ public class CanaryWorldEditListener extends PluginListener {
         return controller.getSession(wrapPlayer(player));
     }
     
+    @Override
+    public void onLogin(Player player) {
+        wrapPlayer(player).dispatchCUIHandshake();
+    }
+
     /**
      * Wrap a hMod player for WorldEdit.
      * 

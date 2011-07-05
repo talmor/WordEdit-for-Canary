@@ -17,6 +17,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
+import com.sk89q.util.StringUtil;
 import com.sk89q.worldedit.LocalWorld;
 import com.sk89q.worldedit.ServerInterface;
 import com.sk89q.worldedit.Vector;
@@ -24,6 +25,7 @@ import com.sk89q.worldedit.LocalPlayer;
 import com.sk89q.worldedit.WorldVector;
 import com.sk89q.worldedit.bags.BlockBag;
 import com.sk89q.worldedit.blocks.BlockType;
+import com.sk89q.worldedit.cui.CUIEvent;
 
 /**
  *
@@ -265,5 +267,26 @@ public class CanaryPlayer extends LocalPlayer {
     @Override
     public void printDebug(String msg) {
         player.sendMessage(Colors.Red + msg);
+    }
+    
+    @Override
+    public void dispatchCUIEvent(CUIEvent event) {
+        String[] params = event.getParameters();
+        
+        if (params.length > 0) {
+            sendRawMessage("\u00A75\u00A76\u00A74\u00A75" + event.getTypeId()
+                    + "|" + StringUtil.joinString(params, "|"));
+        } else {
+            sendRawMessage("\u00A75\u00A76\u00A74\u00A75" + event.getTypeId());
+        }
+    }
+    
+    @Override
+    public void dispatchCUIHandshake() {
+        sendRawMessage("\u00A75\u00A76\u00A74\u00A75");
+    }    
+    
+    public void sendRawMessage(String message) {
+        player.getEntity().a.b(new OPacket3Chat(message));
     }
 }
