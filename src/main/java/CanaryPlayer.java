@@ -119,7 +119,7 @@ public class CanaryPlayer extends LocalPlayer {
      * @return pitch
      */
     public double getPitch() {
-        return player.getPitch();
+        return player.getLocation().rotX;
     }
 
     /**
@@ -146,7 +146,7 @@ public class CanaryPlayer extends LocalPlayer {
      * @return yaw
      */
     public double getYaw() {
-        return player.getRotation();
+        return player.getLocation().rotY;
     }
 
     /**
@@ -245,8 +245,30 @@ public class CanaryPlayer extends LocalPlayer {
      * @return
      */
     public boolean hasPermission(String perm) {
-        return player.canUseCommand("/worldedit");
+        return CanaryPlayer.hasPermission(player, perm);
     }
+    
+    /*
+     * Returns true if the player has the permisions for the command
+     * WordEdit will ask for permisions in this format:
+     * worldedit.tool.info
+     * this will return true if the player has permisions for
+     *  /worldedit
+     *  /worldedit.tool
+     *  /worldedit.tool.info
+     */
+    public static boolean hasPermission(Player player,String wePermission) {
+        if (player.isAdmin()) return true;
+        String[] permArray = wePermission.split("\\.");
+        String command = "/";
+        for (String p : permArray) {
+            command += p;
+            if (player.canUseCommand(command)) {return true;}
+            command += ".";
+        }
+        return false;
+    }
+
     
     /**
      * Get this player's block bag.
