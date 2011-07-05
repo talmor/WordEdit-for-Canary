@@ -361,8 +361,7 @@ public class CanaryWorld extends LocalWorld {
 
     @Override
     public int getBlockLightLevel(Vector pt) {
-        // TODO Implement
-        return 0;
+        return this.world.getWorld().a(pt.getBlockX(),pt.getBlockY(),pt.getBlockZ(),true);
     }
 
     @Override
