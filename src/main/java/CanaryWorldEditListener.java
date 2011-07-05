@@ -126,7 +126,6 @@ public class CanaryWorldEditListener extends PluginListener {
     @Override
     public boolean onCommand(Player player, String[] split) {
         // Fixed: WorlEdit removes initial / from command
-        System.out.println(split[0]);
         String[] cmd = new String[split.length];
         System.arraycopy(split, 0, cmd, 0, split.length);        
         return controller.handleCommand(wrapPlayer(player), cmd);

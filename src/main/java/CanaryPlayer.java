@@ -244,10 +244,8 @@ public class CanaryPlayer extends LocalPlayer {
      * 
      * @return
      */
-    // TODO: QUITAR ESTO!
     public boolean hasPermission(String perm) {
-        return true;
-        // return player.canUseCommand("/" + perm);
+        return player.canUseCommand("/worldedit");
     }
     
     /**
