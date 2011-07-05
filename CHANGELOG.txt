@@ -1,4 +1,20 @@
 
+4.6 Beta 6:
+
+- Added block and item support for Minecraft 1.7
+- Fixed /butcher
+- copy/paste Complex Blocks (chests,furnaces,signs,noteblocks,mobspawners)
+- Added new properties to worldedit.properties
+  navigation-wand: item for use as jumpto command, default compass
+  navigation-max-distance: max distance to jump with wand, default 50
+  show-firstuse-version: shows version info on first use of the plugin, default true
+- Fixed cloth and some item id that didn't work (22,23,24).
+- Fixed smooth brush.
+- Fixed SuperPickAxe
+- Fixed /Jumpto
+- Fixed treeGenerator
+- Fixed WorldGuard issue
+
 4.6:
 - Updated for Minecraft 1.6.
 - Added flood fill tool. Use /floodfill <block> <radius> and right click blocks
