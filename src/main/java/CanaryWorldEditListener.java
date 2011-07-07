@@ -17,6 +17,8 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import com.sk89q.worldedit.*;
 
@@ -39,6 +41,8 @@ public class CanaryWorldEditListener extends PluginListener {
      * will go through.
      */
     private ServerInterface server;
+    String[] cmds = {"/undo","/redo"};
+    List<String> noCommnads = Arrays.asList(cmds);
     
     /**
      * Constructs an instance.
@@ -47,7 +51,6 @@ public class CanaryWorldEditListener extends PluginListener {
      */
     public CanaryWorldEditListener(ServerInterface server) {
         this.server = server;
-
         config = new CanaryConfiguration();
         controller = new com.sk89q.worldedit.WorldEdit(server, config);
     }
@@ -117,6 +120,7 @@ public class CanaryWorldEditListener extends PluginListener {
         return controller.handleBlockLeftClick(wrapPlayer(player), pos);
     }
 
+    
     /**
      *
      * @param player
@@ -125,6 +129,11 @@ public class CanaryWorldEditListener extends PluginListener {
      */
     @Override
     public boolean onCommand(Player player, String[] split) {
+        // Somecommands conflicts with other plugins on cuboid
+        // remove them here, so we don't have to alter sk89q package
+        if (this.noCommnads.contains(split[0].toLowerCase())) {
+            return false;
+        }
         // Fixed: WorlEdit removes initial / from command
         String[] cmd = new String[split.length];
         System.arraycopy(split, 0, cmd, 0, split.length);        
