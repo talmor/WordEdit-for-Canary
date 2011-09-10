@@ -403,7 +403,8 @@ public class CanaryWorld extends LocalWorld {
             MobSpawner ms = (MobSpawner) complexBlock;
             MobSpawnerBlock we = (MobSpawnerBlock) block;
             ms.setSpawn(we.getMobType());
-            ms.setDelay(we.getDelay());
+            //
+            //ms.setDelay(we.getDelay());
             return true;
 
             // Note block
@@ -459,7 +460,8 @@ public class CanaryWorld extends LocalWorld {
             MobSpawner ms = (MobSpawner) complexBlock;
             MobSpawnerBlock we = (MobSpawnerBlock) block;
             we.setMobType(ms.getSpawn());
-            we.setDelay((short) ms.spawner.a);
+            //TODO: Canary can't access spawner.a
+            //we.setDelay((short) ms.spawner.a);
             return true;
 
             // Note block
