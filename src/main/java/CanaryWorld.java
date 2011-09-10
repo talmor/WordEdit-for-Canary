@@ -408,7 +408,8 @@ public class CanaryWorld extends LocalWorld {
 
             // Note block
         } else if (block instanceof NoteBlock) {
-            OTileEntity entity = world.getWorld().n(pt.getBlockX(), pt.getBlockY(), pt.getBlockZ());
+        	
+            OTileEntity entity = world.getWorld().b(pt.getBlockX(), pt.getBlockY(), pt.getBlockZ());
             if (!(entity instanceof OTileEntityNote)) {
                 return false;
             }
@@ -463,7 +464,8 @@ public class CanaryWorld extends LocalWorld {
 
             // Note block
         } else if (block instanceof NoteBlock) {
-            OTileEntity entity = world.getWorld().n(pt.getBlockX(), pt.getBlockY(), pt.getBlockZ());
+        	world.getWorld();
+            OTileEntity entity = world.getWorld().b(pt.getBlockX(), pt.getBlockY(), pt.getBlockZ());
             if (!(entity instanceof OTileEntityNote)) {
                 return false;
             }
