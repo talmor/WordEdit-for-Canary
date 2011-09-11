@@ -677,7 +677,6 @@ public class CanaryWorld extends LocalWorld {
 	@Override
 	public void setBlockDataFast(Vector pt, int data) {
 		setBlockData(pt, data);
-		
 	}
 
 	@Override
