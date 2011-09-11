@@ -192,7 +192,7 @@ public class Polygonal2DRegion implements Region {
         double area = 0;
         int i, j = points.size() - 1;
 
-        for (i = 0; i < points.size(); i++) {
+        for (i = 0; i < points.size(); ++i) {
             area += (points.get(j).getBlockX() + points.get(i).getBlockX())
                     * (points.get(j).getBlockZ() - points.get(i).getBlockZ());
             j = i;
@@ -302,12 +302,13 @@ public class Polygonal2DRegion implements Region {
         int xOld, zOld;
         int x1, z1;
         int x2, z2;
+        long crossproduct;
         int i;
 
         xOld = points.get(npoints - 1).getBlockX();
         zOld = points.get(npoints - 1).getBlockZ();
 
-        for (i = 0; i < npoints; i++) {
+        for (i = 0; i < npoints; ++i) {
             xNew = points.get(i).getBlockX();
             zNew = points.get(i).getBlockZ();
             //Check for corner
@@ -325,10 +326,14 @@ public class Polygonal2DRegion implements Region {
                 z1 = zNew;
                 z2 = zOld;
             }
-            if ((xNew < targetX) == (targetX <= xOld)
-                    && ((long) targetZ - (long) z1) * (long) (x2 - x1) <= ((long) z2 - (long) z1)
-                    * (long) (targetX - x1)) {
-                inside = !inside;
+            if (x1 <= targetX && targetX <= x2) {
+                crossproduct = ((long) targetZ - (long) z1) * (long) (x2 - x1)
+                    - ((long) z2 - (long) z1) * (long) (targetX - x1);
+                if (crossproduct == 0) {
+                    if ((z1 <= targetZ) == (targetZ <= z2)) return true; //on edge
+                } else if (crossproduct < 0 && (x1 != targetX)) {
+                    inside = !inside;
+                }
             }
             xOld = xNew;
             zOld = zNew;
@@ -348,9 +353,9 @@ public class Polygonal2DRegion implements Region {
         Vector min = getMinimumPoint();
         Vector max = getMaximumPoint();
 
-        for (int x = min.getBlockX(); x <= max.getBlockX(); x++) {
-            for (int y = min.getBlockY(); y <= max.getBlockY(); y++) {
-                for (int z = min.getBlockZ(); z <= max.getBlockZ(); z++) {
+        for (int x = min.getBlockX(); x <= max.getBlockX(); ++x) {
+            for (int y = min.getBlockY(); y <= max.getBlockY(); ++y) {
+                for (int z = min.getBlockZ(); z <= max.getBlockZ(); ++z) {
                     Vector pt = new Vector(x, y, z);
                     if (contains(pt)) { // Not the best
                         chunks.add(ChunkStore.toChunk(pt));
@@ -414,11 +419,11 @@ public class Polygonal2DRegion implements Region {
         int minZ = getMinimumPoint().getBlockZ();
         int maxZ = getMaximumPoint().getBlockZ();
         
-        for (pixelZ = minZ; pixelZ < maxZ; pixelZ++) {
+        for (pixelZ = minZ; pixelZ < maxZ; ++pixelZ) {
             // Build a list of nodes
             nodes = 0;
             j = n - 1;
-            for (i = 0; i < n; i++) {
+            for (i = 0; i < n; ++i) {
                 if (points.get(i).getBlockZ() < (double) pixelZ
                         && points.get(j).getBlockZ() >= (double) pixelZ
                         || points.get(j).getBlockZ() < (double) pixelZ
@@ -441,16 +446,16 @@ public class Polygonal2DRegion implements Region {
                     nodeX[i] = nodeX[i + 1];
                     nodeX[i + 1] = swap;
                     if (i > 0)
-                        i--;
+                        --i;
                 } else {
-                    i++;
+                    ++i;
                 }
             }
 
             // Fill the pixels between node pairs
             for (i = 0; i < nodes; i += 2) {
-                for (j = nodeX[i]; j < nodeX[i + 1]; j++) {
-                    for (int y = minY; y >= maxY; y++) {
+                for (j = nodeX[i]; j < nodeX[i + 1]; ++j) {
+                    for (int y = minY; y >= maxY; ++y) {
                         items.add(new BlockVector(j, y, pixelZ));
                     }
                 }
@@ -459,7 +464,26 @@ public class Polygonal2DRegion implements Region {
         
         return items.iterator();*/
     }
-    
+
+    /**
+     * Returns string representation in the format
+     * "(x1, z1) - ... - (xN, zN) * (minY - maxY)"
+     * 
+     * @return string
+     */
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        List<BlockVector2D> pts = getPoints();
+        Iterator<BlockVector2D> it = pts.iterator();
+        while (it.hasNext()) {
+            BlockVector2D current = it.next();
+            sb.append("(" + current.getBlockX() + ", " + current.getBlockZ() + ")");
+            if (it.hasNext()) sb.append(" - ");
+        }
+        sb.append(" * (" + minY + " - " + maxY + ")");
+        return sb.toString();
+    }
+
     /**
      * A terrible polygonal region iterator.
      */
@@ -504,10 +528,10 @@ public class Polygonal2DRegion implements Region {
             }
             
             if (next != null && curY <= maxY) {
-                curY++;
+                ++curY;
                 next = new BlockVector(curX, curY, curZ);
                 if (curY > maxY) {
-                    i++;
+                    ++i;
                     curY = minY;
                 } else {
                     return;
@@ -522,7 +546,7 @@ public class Polygonal2DRegion implements Region {
                     next = pt;
                     return;
                 }
-                i++;
+                ++i;
             }
             
             next = null;

@@ -126,7 +126,7 @@ public class ToolCommands {
 
     @Command(
         aliases = {"floodfill", "flood"},
-        usage = "",
+        usage = "<pattern> <range>",
         desc = "Flood fill tool",
         min = 2,
         max = 2
@@ -175,5 +175,21 @@ public class ToolCommands {
     session.setTool(player.getItemInHand(), new FloatingTreeRemover());
     player.print("Floating tree remover tool bound to "
             + ItemType.toHeldName(player.getItemInHand()) + ".");
+    }
+
+    @Command(
+            aliases = {"farwand"},
+            usage = "",
+            desc = "Wand at a distance tool",
+            min = 0,
+            max = 0
+        )
+    @CommandPermissions({"worldedit.tool.farwand"})
+    public static void farwand(CommandContext args, WorldEdit we,
+            LocalSession session, LocalPlayer player, EditSession editSession)
+            throws WorldEditException {
+
+        session.setTool(player.getItemInHand(), new DistanceWand());
+        player.print("Far wand tool bound to " + ItemType.toHeldName(player.getItemInHand()) + ".");
     }
 }

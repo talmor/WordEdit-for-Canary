@@ -19,6 +19,7 @@
 
 import com.sk89q.worldedit.Vector;
 import com.sk89q.worldedit.bags.*;
+import com.sk89q.worldedit.blocks.BlockID;
 
 public class CanaryPlayerInventoryBlockBag extends BlockBag {
     /**
@@ -63,7 +64,7 @@ public class CanaryPlayerInventoryBlockBag extends BlockBag {
      * @param id
      */
     public void fetchBlock(int id) throws BlockBagException {
-        if (id == 0) {
+        if (id == BlockID.AIR) {
             throw new IllegalArgumentException("Can't fetch air block");
         }
         
@@ -108,7 +109,7 @@ public class CanaryPlayerInventoryBlockBag extends BlockBag {
      * @param id
      */
     public void storeBlock(int id) throws BlockBagException {
-        if (id == 0) {
+        if (id == BlockID.AIR) {
             throw new IllegalArgumentException("Can't store air block");
         }
         
@@ -117,8 +118,8 @@ public class CanaryPlayerInventoryBlockBag extends BlockBag {
         boolean found = false;
         int freeSlot = -1;
         
-        for (int slot = 0; slot < items.length; slot++) {
-            Item item = items[slot];
+        for (int slot = 0; slot < items.length; ++slot) {
+        	Item item = items[slot];
             
             // Delay using up a free slot until we know there are no stacks
             // of this item to merge into

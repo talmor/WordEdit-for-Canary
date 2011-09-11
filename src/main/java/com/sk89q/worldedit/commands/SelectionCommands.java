@@ -41,47 +41,74 @@ import com.sk89q.worldedit.blocks.*;
 public class SelectionCommands {
     @Command(
         aliases = {"/pos1"},
-        usage = "",
+        usage = "[coordinates]",
         desc = "Set position 1",
         min = 0,
-        max = 0
+        max = 1
     )
     @CommandPermissions({"worldedit.selection.pos"})
     public static void pos1(CommandContext args, WorldEdit we,
             LocalSession session, LocalPlayer player, EditSession editSession)
             throws WorldEditException {
-        
-        if (!session.getRegionSelector(player.getWorld())
-                .selectPrimary(player.getBlockIn())) {
+
+        Vector pos;
+
+        if (args.argsLength() == 1) {
+            if (args.getString(0).matches("-?\\d+,-?\\d+,-?\\d+")) {
+                String[] coords = args.getString(0).split(",");
+                pos = new Vector(Integer.parseInt(coords[0]), Integer.parseInt(coords[1]), Integer.parseInt(coords[2]));
+            } else {
+                player.printError("Invalid coordinates " + args.getString(0));
+                return;
+            }
+        } else {
+            pos = player.getBlockIn();
+        }
+
+        if (!session.getRegionSelector(player.getWorld()).selectPrimary(pos)) {
             player.printError("Position already set.");
             return;
         }
 
         session.getRegionSelector(player.getWorld())
-                .explainPrimarySelection(player, session, player.getBlockIn());
+                .explainPrimarySelection(player, session, pos);
     }
 
     @Command(
         aliases = {"/pos2"},
-        usage = "",
+        usage = "[coordinates]",
         desc = "Set position 2",
         min = 0,
-        max = 0
+        max = 1
     )
     @CommandPermissions({"worldedit.selection.pos"})
     public static void pos2(CommandContext args, WorldEdit we,
             LocalSession session, LocalPlayer player, EditSession editSession)
             throws WorldEditException {
 
-        if (!session.getRegionSelector(player.getWorld())
-                .selectSecondary(player.getBlockIn())) {
+        Vector pos;
+        if(args.argsLength() == 1) {
+            if(args.getString(0).matches("-?\\d+,-?\\d+,-?\\d+")) {
+                String[] coords = args.getString(0).split(",");
+                pos = new Vector(Integer.parseInt(coords[0]), 
+                        Integer.parseInt(coords[1]), 
+                        Integer.parseInt(coords[2]));
+            } else {
+                player.printError("Invalid coordinates " + args.getString(0));
+                return;
+            }
+        } else {
+            pos = player.getBlockIn();
+        }
+
+        if (!session.getRegionSelector(player.getWorld()).selectSecondary(pos)) {
             player.printError("Position already set.");
             return;
         }
 
 
         session.getRegionSelector(player.getWorld())
-                .explainSecondarySelection(player, session, player.getBlockIn());
+                .explainSecondarySelection(player, session, pos);
     }
 
     @Command(
@@ -143,7 +170,8 @@ public class SelectionCommands {
     @Command(
         aliases = {"/chunk"},
         usage = "",
-        desc = "Set the selection to your current chunk",
+        flags = "s",
+        desc = "Set the selection to your current chunk. The -s flag extends your current selection to the encompassed chunks.",
         min = 0,
         max = 0
     )
@@ -152,9 +180,30 @@ public class SelectionCommands {
             LocalSession session, LocalPlayer player, EditSession editSession)
             throws WorldEditException {
 
-        Vector2D min2D = ChunkStore.toChunk(player.getBlockIn());
-        Vector min = new Vector(min2D.getBlockX() * 16, 0, min2D.getBlockZ() * 16);
-        Vector max = min.add(15, 127, 15);
+        final Vector min;
+        final Vector max;
+        if (args.hasFlag('s')) {
+            Region region = session.getSelection(player.getWorld());
+
+            final Vector2D min2D = ChunkStore.toChunk(region.getMinimumPoint());
+            final Vector2D max2D = ChunkStore.toChunk(region.getMaximumPoint());
+
+            min = new Vector(min2D.getBlockX() * 16, 0, min2D.getBlockZ() * 16);
+            max = new Vector(max2D.getBlockX() * 16 + 15, 127, max2D.getBlockZ() * 16 + 15);
+
+            player.print("Chunks selected: ("
+                    + min2D.getBlockX() + ", " + min2D.getBlockZ() + ") - ("
+                    + max2D.getBlockX() + ", " + max2D.getBlockZ() + ")");
+        }
+        else {
+            final Vector2D min2D = ChunkStore.toChunk(player.getBlockIn());
+
+            min = new Vector(min2D.getBlockX() * 16, 0, min2D.getBlockZ() * 16);
+            max = min.add(15, 127, 15);
+
+            player.print("Chunk selected: "
+                    + min2D.getBlockX() + ", " + min2D.getBlockZ());
+        }
 
         CuboidRegionSelector selector = new CuboidRegionSelector();
         selector.selectPrimary(min);
@@ -163,8 +212,6 @@ public class SelectionCommands {
         
         session.dispatchCUISelection(player);
 
-        player.print("Chunk selected: "
-                + min2D.getBlockX() + ", " + min2D.getBlockZ());
     }
     
     @Command(

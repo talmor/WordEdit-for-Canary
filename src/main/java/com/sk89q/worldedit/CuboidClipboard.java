@@ -140,21 +140,21 @@ public class CuboidClipboard {
                 [Math.abs(sizeRotated.getBlockY())]
                 [Math.abs(sizeRotated.getBlockZ())];
 
-        for (int x = 0; x < width; x++) {
-            for (int z = 0; z < length; z++) {
+        for (int x = 0; x < width; ++x) {
+            for (int z = 0; z < length; ++z) {
                 Vector v = (new Vector(x, 0, z)).transform2D(angle, 0, 0, 0, 0);
                 int newX = v.getBlockX();
                 int newZ = v.getBlockZ();
-                for (int y = 0; y < height; y++) {
+                for (int y = 0; y < height; ++y) {
                     BaseBlock block = data[x][y][z];
                     newData[shiftX + newX][y][shiftZ + newZ] = block;
                     
                     if (reverse) {
-                        for (int i = 0; i < numRotations; i++) {
+                        for (int i = 0; i < numRotations; ++i) {
                             block.rotate90Reverse();
                         }
                     } else {
-                        for (int i = 0; i < numRotations; i++) {
+                        for (int i = 0; i < numRotations; ++i) {
                             block.rotate90();
                         }
                     }
@@ -167,54 +167,86 @@ public class CuboidClipboard {
                           Math.abs(sizeRotated.getBlockY()),
                           Math.abs(sizeRotated.getBlockZ()));
         offset = offset.transform2D(angle, 0, 0, 0, 0)
-                .subtract(shiftX, 0, shiftZ);;
+                .subtract(shiftX, 0, shiftZ);
+    }
+
+    /**
+     * Flip the clipboard.
+     * 
+     * @param dir direction to flip
+     */
+    public void flip(FlipDirection dir) {
+        flip(dir, false);
     }
 
     /**
      * Flip the clipboard.
      *
-     * @param dir
+     * @param dir direction to flip
+     * @param aroundPlayer flip the offset around the player
      */
-    public void flip(FlipDirection dir) {
-        int width = getWidth();
-        int length = getLength();
-        int height = getHeight();
+    public void flip(FlipDirection dir, boolean aroundPlayer) {
+        final int width = getWidth();
+        final int length = getLength();
+        final int height = getHeight();
 
-        if (dir == FlipDirection.NORTH_SOUTH) {
-            int len = (int)Math.floor(width / 2);
-            for (int xs = 0; xs < len; xs++) {
-                for (int z = 0; z < length; z++) {
-                    for (int y = 0; y < height; y++) {
-                        BaseBlock old = data[xs][y][z];
-                        old.flip();
-                        data[xs][y][z] = data[width - xs - 1][y][z];
+        switch (dir) {
+        case NORTH_SOUTH:
+            final int wid = (int) Math.ceil(width / 2.0f);
+            for (int xs = 0; xs < wid; ++xs) {
+                for (int z = 0; z < length; ++z) {
+                    for (int y = 0; y < height; ++y) {
+                        BaseBlock old = data[xs][y][z].flip(dir);
+                        if (xs == width - xs - 1) continue;
+                        data[xs][y][z] = data[width - xs - 1][y][z].flip(dir);
                         data[width - xs - 1][y][z] = old;
                     }
                 }
             }
-        } else if (dir == FlipDirection.WEST_EAST) {
-            int len = (int)Math.floor(length / 2);
-            for (int zs = 0; zs < len; zs++) {
-                for (int x = 0; x < width; x++) {
-                    for (int y = 0; y < height; y++) {
-                        BaseBlock old = data[x][y][zs];
-                        old.flip();
-                        data[x][y][zs] = data[x][y][length - zs - 1];
+
+            if (aroundPlayer) {
+                offset = offset.setX(1 - offset.getX() - width);
+            }
+
+            break;
+
+        case WEST_EAST:
+            final int len = (int) Math.ceil(length / 2.0f);
+            for (int zs = 0; zs < len; ++zs) {
+                for (int x = 0; x < width; ++x) {
+                    for (int y = 0; y < height; ++y) {
+                        BaseBlock old = data[x][y][zs].flip(dir);
+                        if (zs == length - zs - 1) continue;
+                        data[x][y][zs] = data[x][y][length - zs - 1].flip(dir);
                         data[x][y][length - zs - 1] = old;
                     }
                 }
             }
-        } else if (dir == FlipDirection.UP_DOWN) {
-            int len = (int)Math.floor(height / 2);
-            for (int ys = 0; ys < len; ys++) {
-                for (int x = 0; x < width; x++) {
-                    for (int z = 0; z < length; z++) {
-                        BaseBlock old = data[x][ys][z];
-                        data[x][ys][z] = data[x][height - ys - 1][z];
+
+            if (aroundPlayer) {
+                offset = offset.setZ(1 - offset.getZ() - length);
+            }
+
+            break;
+
+        case UP_DOWN:
+            final int hei = (int) Math.ceil(height / 2.0f);
+            for (int ys = 0; ys < hei; ++ys) {
+                for (int x = 0; x < width; ++x) {
+                    for (int z = 0; z < length; ++z) {
+                        BaseBlock old = data[x][ys][z].flip(dir);
+                        if (ys == height - ys - 1) continue;
+                        data[x][ys][z] = data[x][height - ys - 1][z].flip(dir);
                         data[x][height - ys - 1][z] = old;
                     }
                 }
             }
+
+            if (aroundPlayer) {
+                offset = offset.setY(1 - offset.getY() - height);
+            }
+
+            break;
         }
     }
 
@@ -224,9 +256,9 @@ public class CuboidClipboard {
      * @param editSession
      */
     public void copy(EditSession editSession) {
-        for (int x = 0; x < size.getBlockX(); x++) {
-            for (int y = 0; y < size.getBlockY(); y++) {
-                for (int z = 0; z < size.getBlockZ(); z++) {
+        for (int x = 0; x < size.getBlockX(); ++x) {
+            for (int y = 0; y < size.getBlockY(); ++y) {
+                for (int z = 0; z < size.getBlockZ(); ++z) {
                     data[x][y][z] =
                         editSession.getBlock(new Vector(x, y, z).add(getOrigin()));
                 }
@@ -257,9 +289,9 @@ public class CuboidClipboard {
      */
     public void place(EditSession editSession, Vector pos, boolean noAir)
             throws MaxChangedBlocksException {
-        for (int x = 0; x < size.getBlockX(); x++) {
-            for (int y = 0; y < size.getBlockY(); y++) {
-                for (int z = 0; z < size.getBlockZ(); z++) {
+        for (int x = 0; x < size.getBlockX(); ++x) {
+            for (int y = 0; y < size.getBlockY(); ++y) {
+                for (int z = 0; z < size.getBlockZ(); ++z) {
                     if (noAir && data[x][y][z].isAir())
                         continue;
 
@@ -330,9 +362,9 @@ public class CuboidClipboard {
         byte[] blockData = new byte[width * height * length];
         ArrayList<Tag> tileEntities = new ArrayList<Tag>();
 
-        for (int x = 0; x < width; x++) {
-            for (int y = 0; y < height; y++) {
-                for (int z = 0; z < length; z++) {
+        for (int x = 0; x < width; ++x) {
+            for (int y = 0; y < height; ++y) {
+                for (int z = 0; z < length; ++z) {
                     int index = y * width * length + z * width + x;
                     blocks[index] = (byte)data[x][y][z].getType();
                     blockData[index] = (byte)data[x][y][z].getData();
@@ -476,27 +508,43 @@ public class CuboidClipboard {
         clipboard.setOrigin(origin);
         clipboard.setOffset(offset);
 
-        for (int x = 0; x < width; x++) {
-            for (int y = 0; y < height; y++) {
-                for (int z = 0; z < length; z++) {
+        for (int x = 0; x < width; ++x) {
+            for (int y = 0; y < height; ++y) {
+                for (int z = 0; z < length; ++z) {
                     int index = y * width * length + z * width + x;
                     BlockVector pt = new BlockVector(x, y, z);
                     BaseBlock block;
 
-                    if (blocks[index] == BlockID.WALL_SIGN || blocks[index] == BlockID.SIGN_POST) {
+                    switch (blocks[index]) {
+                    case BlockID.WALL_SIGN:
+                    case BlockID.SIGN_POST:
                         block = new SignBlock(blocks[index], blockData[index]);
-                    } else if (blocks[index] == BlockID.CHEST) {
+                        break;
+
+                    case BlockID.CHEST:
                         block = new ChestBlock(blockData[index]);
-                    } else if (blocks[index] == BlockID.FURNACE || blocks[index] == BlockID.BURNING_FURNACE) {
+                        break;
+
+                    case BlockID.FURNACE:
+                    case BlockID.BURNING_FURNACE:
                         block = new FurnaceBlock(blocks[index], blockData[index]);
-                    } else if (blocks[index] == BlockID.DISPENSER) {
+                        break;
+
+                    case BlockID.DISPENSER:
                         block = new DispenserBlock(blockData[index]);
-                    } else if (blocks[index] == BlockID.MOB_SPAWNER) {
+                        break;
+
+                    case BlockID.MOB_SPAWNER:
                         block = new MobSpawnerBlock(blockData[index]);
-                    } else if (blocks[index] == BlockID.NOTE_BLOCK) {
+                        break;
+
+                    case BlockID.NOTE_BLOCK:
                         block = new NoteBlock(blockData[index]);
-                    } else {
+                        break;
+
+                    default:
                         block = new BaseBlock(blocks[index], blockData[index]);
+                        break;
                     }
                     
                     if (block instanceof TileEntityBlock 

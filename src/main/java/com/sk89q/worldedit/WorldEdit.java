@@ -22,13 +22,12 @@ package com.sk89q.worldedit;
 import java.util.*;
 import java.util.logging.Logger;
 import java.io.*;
+import java.lang.reflect.Method;
+
 import javax.script.ScriptException;
-import com.sk89q.minecraft.util.commands.CommandPermissionsException;
-import com.sk89q.minecraft.util.commands.CommandUsageException;
-import com.sk89q.minecraft.util.commands.CommandsManager;
-import com.sk89q.minecraft.util.commands.MissingNestedCommandException;
-import com.sk89q.minecraft.util.commands.UnhandledCommandException;
-import com.sk89q.minecraft.util.commands.WrappedCommandException;
+
+import com.sk89q.minecraft.util.commands.*;
+
 import com.sk89q.util.StringUtil;
 import com.sk89q.worldedit.bags.BlockBag;
 import com.sk89q.worldedit.blocks.*;
@@ -96,7 +95,7 @@ public class WorldEdit {
      * @param server
      * @param config
      */
-    public WorldEdit(ServerInterface server, LocalConfiguration config) {
+    public WorldEdit(ServerInterface server, final LocalConfiguration config) {
         this.server = server;
         this.config = config;
         
@@ -104,6 +103,59 @@ public class WorldEdit {
             @Override
             public boolean hasPermission(LocalPlayer player, String perm) {
                 return player.hasPermission(perm);
+            }
+            
+            @Override
+            public void invokeMethod(Method parent, String[] args,
+                    LocalPlayer player, Method method, Object instance,
+                    Object[] methodArgs, int level) throws CommandException {
+                if (config.logCommands) {
+                    final Logging loggingAnnotation = method.getAnnotation(Logging.class);
+
+                    final Logging.LogMode logMode;
+                    if (loggingAnnotation == null)
+                        logMode = null;
+                    else
+                        logMode = loggingAnnotation.value();
+
+                    String msg = "WorldEdit: " + player.getName() + "(in " + player.getWorld().getName() + ")"
+                            + ": " + StringUtil.joinString(args, " ");
+                    if (logMode != null) {
+                        Vector position = player.getPosition();
+                        final LocalSession session = getSession(player);
+                        switch (logMode) {
+                        case PLACEMENT:
+                            try {
+                                position = session.getPlacementPosition(player);
+                            } catch (IncompleteRegionException e) {
+                                break;
+                            }
+                            /* FALL-THROUGH */
+
+                        case POSITION:
+                            msg += " - Position: "+position;
+                            break;
+
+                        case ALL:
+                            msg += " - Position: "+position;
+                            /* FALL-THROUGH */
+
+                        case ORIENTATION_REGION:
+                            msg += " - Orientation: "+player.getCardinalDirection().name();
+                            /* FALL-THROUGH */
+
+                        case REGION:
+                            try {
+                                msg += " - Region: "+session.getSelection(player.getWorld());
+                            } catch (IncompleteRegionException e) {
+                                break;
+                            }
+                            break;
+                        }
+                    }
+                    logger.info(msg);
+                }
+                super.invokeMethod(parent, args, player, method, instance, methodArgs, level);
             }
         };
 
@@ -120,6 +172,16 @@ public class WorldEdit {
         commands.register(ToolUtilCommands.class);
         commands.register(ToolCommands.class);
         commands.register(UtilityCommands.class);
+    }
+    
+    /*
+     * Gets the LocalSession for a player name if it exists
+     *
+     * @param player
+     * @return The session for the player, if it exists
+     */
+    public LocalSession getSession(String player) {
+        return sessions.get(player);
     }
 
     /**
@@ -226,7 +288,7 @@ public class WorldEdit {
             ClothColor col = ClothColor.lookup(testID);
             
             if (col != null) {
-                blockType = BlockType.fromID(35);
+                blockType = BlockType.CLOTH;
                 data = col.getID();
             } else {
                 throw new UnknownItemException(arg);
@@ -238,7 +300,7 @@ public class WorldEdit {
             blockId = blockType.getID();
         }
         
-        if (!server.isValidBlockType(blockId)) {
+        if (!player.getWorld().isValidBlockType(blockId)) {
             throw new UnknownItemException(arg);
         }
         
@@ -250,7 +312,8 @@ public class WorldEdit {
                     data = 0;
                 }
             } catch (NumberFormatException e) {
-                if (blockType == BlockType.CLOTH) {
+                switch (blockType) {
+                case CLOTH:
                     ClothColor col = ClothColor.lookup(args1[1]);
                     
                     if (col != null) {
@@ -258,26 +321,39 @@ public class WorldEdit {
                     } else {
                         throw new InvalidItemException(arg, "Unknown cloth color '" + args1[1] + "'");
                     }
-                } else if (blockType == BlockType.STEP
-                        || blockType == BlockType.DOUBLE_STEP) {
+                    break;
+
+                case STEP:
+                case DOUBLE_STEP:
                     BlockType dataType = BlockType.lookup(args1[1]);
                     
                     if (dataType != null) {
-                        if (dataType == BlockType.STONE) {
+                        switch (dataType) {
+                        case STONE:
                             data = 0;
-                        } else if (dataType == BlockType.SANDSTONE) {
+                            break;
+
+                        case SANDSTONE:
                             data = 1;
-                        } else if (dataType == BlockType.WOOD) {
+                            break;
+
+                        case WOOD:
                             data = 2;
-                        } else if (dataType == BlockType.COBBLESTONE) {
+                            break;
+
+                        case COBBLESTONE:
                             data = 3;
-                        } else {
+                            break;
+
+                        default:
                             throw new InvalidItemException(arg, "Invalid step type '" + args1[1] + "'");
                         }
                     } else {
                         throw new InvalidItemException(arg, "Unknown step type '" + args1[1] + "'");
                     }
-                } else {
+                    break;
+
+                default:
                     throw new InvalidItemException(arg, "Unknown data value '" + args1[1] + "'");
                 }
             }
@@ -348,6 +424,21 @@ public class WorldEdit {
         return getBlock(player, id, false);
     }
 
+    public Set<BaseBlock> getBlocks (LocalPlayer player, String list, boolean allAllowed)
+            throws DisallowedItemException, UnknownItemException {
+        String[] items = list.split(",");
+        Set<BaseBlock> blocks = new HashSet<BaseBlock>();
+        for (String id : items) {
+            blocks.add(getBlock(player, id, allAllowed));
+        }
+        return blocks;
+    }
+
+    public Set<BaseBlock> getBlocks(LocalPlayer player, String list)
+            throws DisallowedItemException, UnknownItemException {
+        return getBlocks(player, list, false);
+    }
+
     /**
      * Get a list of blocks as a set. This returns a Pattern.
      *
@@ -409,7 +500,7 @@ public class WorldEdit {
         return new RandomFillPattern(blockChances);
     }
     
-    /**
+     /**
      * Get a block mask. Block masks are used to determine which
      * blocks to include when replacing.
      * 
@@ -422,14 +513,13 @@ public class WorldEdit {
     public Mask getBlockMask(LocalPlayer player, LocalSession session,
             String maskString) throws WorldEditException {
         Mask mask = null;
-        
+
         for (String component : maskString.split(" ")) {
             Mask current = null;
-            
             if (component.length() == 0) {
                 continue;
             }
-            
+
             if (component.charAt(0) == '#') {
                 if (component.equalsIgnoreCase("#existing")) {
                     current = new ExistingBlockMask();
@@ -440,6 +530,32 @@ public class WorldEdit {
                 } else {
                     throw new UnknownItemException(component);
                 }
+            } else if (component.charAt(0) == '>'
+                    || component.charAt(0) == '<') {
+                LocalWorld world = player.getWorld();
+                boolean over = component.charAt(0) == '>';
+                Set<Integer> set = new HashSet<Integer>();
+                String ids = component.replaceAll(">", "").replaceAll("<", "");
+
+                if (!(ids.equals("*") || ids.equals(""))) {
+                    for (String sid : ids.split(",")) {
+                        try {
+                            int pid = Integer.parseInt(sid);
+                            if (!world.isValidBlockType(pid)) {
+                                throw new UnknownItemException(sid);
+                            }
+                            set.add(pid);
+                        } catch (NumberFormatException e) {
+                            BlockType type = BlockType.lookup(sid);
+                            int id = type.getID();
+                            if (!world.isValidBlockType(id)) {
+                                throw new UnknownItemException(sid);
+                            }
+                            set.add(id);
+                        }
+                    }
+                }
+                current = new UnderOverlayMask(set, over);
             } else {
                 if (component.charAt(0) == '!' && component.length() > 1) {
                     current = new InvertedBlockTypeMask(
@@ -461,7 +577,6 @@ public class WorldEdit {
         
         return mask;
     }
-
     /**
      * Get a list of blocks as a set.
      *
@@ -586,7 +701,7 @@ public class WorldEdit {
      * @param radius
      * @throws MaxRadiusException
      */
-    public void checkMaxRadius(int radius) throws MaxRadiusException {
+    public void checkMaxRadius(double radius) throws MaxRadiusException {
         if (config.maxRadius > 0 && radius > config.maxRadius) {
             throw new MaxRadiusException();
         }
@@ -630,41 +745,48 @@ public class WorldEdit {
      */
     public Vector getDirection(LocalPlayer player, String dirStr)
             throws UnknownDirectionException {
-        int xm = 0;
-        int ym = 0;
-        int zm = 0;
-        
-        PlayerDirection dir = null;
         
         dirStr = dirStr.toLowerCase();
-        boolean wasDetected = false;
 
         if (dirStr.equals("me")) {
-            dir = player.getCardinalDirection();
-            wasDetected = true;
-        }
+            final PlayerDirection dir = player.getCardinalDirection();
+            switch (dir) {
+            case WEST:
+            case EAST:
+            case SOUTH:
+            case NORTH:
+            case UP:
+            case DOWN:
+                dirStr = dir.name().toLowerCase();
+                break;
 
-        if (dirStr.charAt(0) == 'w' || dir == PlayerDirection.WEST) {
-            zm += 1;
-        } else if (dirStr.charAt(0) == 'e' || dir == PlayerDirection.EAST) {
-            zm -= 1;
-        } else if (dirStr.charAt(0) == 's' || dir == PlayerDirection.SOUTH) {
-            xm += 1;
-        } else if (dirStr.charAt(0) == 'n' || dir == PlayerDirection.NORTH) {
-            xm -= 1;
-        } else if (dirStr.charAt(0) == 'u') {
-            ym += 1;
-        } else if (dirStr.charAt(0) == 'd') {
-            ym -= 1;
-        } else {
-            if (wasDetected) {
+            default:
                 throw new UnknownDirectionException(dir.name());
-            } else {
-                throw new UnknownDirectionException(dirStr);
             }
         }
 
-        return new Vector(xm, ym, zm);
+        switch (dirStr.charAt(0)) {
+        case 'w':
+            return new Vector(0, 0, 1);
+
+        case 'e':
+            return new Vector(0, 0, -1);
+
+        case 's':
+            return new Vector(1, 0, 0);
+
+        case 'n':
+            return new Vector(-1, 0, 0);
+
+        case 'u':
+            return new Vector(0, 1, 0);
+
+        case 'd':
+            return new Vector(0, -1, 0);
+
+        default:
+            throw new UnknownDirectionException(dirStr);
+        }
     }
     
     /**
@@ -678,58 +800,55 @@ public class WorldEdit {
      */
     public Vector getDiagonalDirection( LocalPlayer player, String dirStr )
         throws UnknownDirectionException {
-        int xm = 0;
-        int ym = 0;
-        int zm = 0;
-
-        PlayerDirection dir = null;
 
         dirStr = dirStr.toLowerCase();
-        boolean wasDetected = false;
 
-        if ( dirStr.equals( "me" ) ) {
-            dir = player.getCardinalDirection();
-            wasDetected = true;
+        if (dirStr.equals("me")) {
+            dirStr = player.getCardinalDirection().name().toLowerCase();
         }
 
-        if ((dirStr.charAt(0) == 's' && dirStr.indexOf( 'w' ) > 0) || dir == PlayerDirection.SOUTH_WEST) {
-            zm += 1;
-            xm += 1;
-        } else if ((dirStr.charAt(0) == 'n' && dirStr.indexOf( 'w' ) > 0) || dir == PlayerDirection.NORTH_WEST) {
-            zm += 1;
-            xm -= 1;
-        } else if ((dirStr.charAt(0) == 's' && dirStr.indexOf( 'e' ) > 0) || dir == PlayerDirection.SOUTH_EAST) {
-            zm -= 1;
-            xm += 1;
-        } else if ((dirStr.charAt(0) == 'n' && dirStr.indexOf( 'e' ) > 0) || dir == PlayerDirection.NORTH_EAST) {
-            zm -= 1;
-            xm -= 1;
-        } else if (dirStr.charAt(0) == 'w' || dir == PlayerDirection.WEST) {
-            zm += 1;
-        } else if (dirStr.charAt(0) == 'e' || dir == PlayerDirection.EAST) {
-            zm -= 1;
-        } else if (dirStr.charAt(0) == 's' || dir == PlayerDirection.SOUTH) {
-            xm += 1;
-        } else if (dirStr.charAt(0) == 'n' || dir == PlayerDirection.NORTH) {
-            xm -= 1;
-        } else if (dirStr.charAt(0) == 'u') {
-            ym += 1;
-        } else if (dirStr.charAt(0) == 'd') {
-            ym -= 1;
-        } else {
-            if (wasDetected) {
-                throw new UnknownDirectionException(dir.name());
-            } else {
-                throw new UnknownDirectionException(dirStr);
+        switch (dirStr.charAt(0)) {
+        case 'w':
+            return new Vector(0, 0, 1);
+
+        case 'e':
+            return new Vector(0, 0, -1);
+
+        case 's':
+            if (dirStr.indexOf('w') > 0) {
+                return new Vector(1, 0, 1);
             }
-        }
 
-        return new Vector( xm, ym, zm );
+            if (dirStr.indexOf('e') > 0) {
+                return new Vector(1, 0, -1);
+            }
+
+            return new Vector(1, 0, 0);
+
+        case 'n':
+            if (dirStr.indexOf('w') > 0) {
+                return new Vector(-1, 0, 1);
+            }
+
+            if (dirStr.indexOf('e') > 0) {
+                return new Vector(-1, 0, -1);
+            }
+
+            return new Vector(-1, 0, 0);
+
+        case 'u':
+            return new Vector(0, 1, 0);
+
+        case 'd':
+            return new Vector(0, -1, 0);
+
+        default:
+            throw new UnknownDirectionException(dirStr);
+        }
     }
 
     /**
-     * Get the flip direction for a player's direction. May return
-     * null if a direction could not be found.
+     * Get the flip direction for a player's direction.
      *
      * @param player
      * @param dirStr 
@@ -739,26 +858,42 @@ public class WorldEdit {
     public CuboidClipboard.FlipDirection getFlipDirection(
             LocalPlayer player, String dirStr)
             throws UnknownDirectionException {
-        PlayerDirection dir = null;
         
         if (dirStr.equals("me")) {
-            dir = player.getCardinalDirection();
+            final PlayerDirection dir = player.getCardinalDirection();
+            switch (dir) {
+            case WEST:
+            case EAST:
+                return CuboidClipboard.FlipDirection.WEST_EAST;
+
+            case NORTH:
+            case SOUTH:
+                return CuboidClipboard.FlipDirection.NORTH_SOUTH;
+
+            case UP:
+            case DOWN:
+                return CuboidClipboard.FlipDirection.UP_DOWN;
+
+            default:
+                throw new UnknownDirectionException(dir.name());
+            }
         }
 
-        if (dirStr.charAt(0) == 'w' || dir == PlayerDirection.EAST) {
+        switch (dirStr.charAt(0)) {
+        case 'w':
+        case 'e':
             return CuboidClipboard.FlipDirection.WEST_EAST;
-        } else if (dirStr.charAt(0) == 'e' || dir == PlayerDirection.EAST) {
-            return CuboidClipboard.FlipDirection.WEST_EAST;
-        } else if (dirStr.charAt(0) == 's' || dir == PlayerDirection.SOUTH) {
+
+        case 'n':
+        case 's':
             return CuboidClipboard.FlipDirection.NORTH_SOUTH;
-        } else if (dirStr.charAt(0) == 'n' || dir == PlayerDirection.SOUTH) {
-            return CuboidClipboard.FlipDirection.NORTH_SOUTH;
-        } else if (dirStr.charAt(0) == 'u') {
+
+        case 'u':
+        case 'd':
             return CuboidClipboard.FlipDirection.UP_DOWN;
-        } else if (dirStr.charAt(0) == 'd') {
-            return CuboidClipboard.FlipDirection.UP_DOWN;
-        } else {
-            throw new UnknownDirectionException(dir.name());
+
+        default:
+            throw new UnknownDirectionException(dirStr);
         }
     }
 
@@ -812,7 +947,7 @@ public class WorldEdit {
                         ? type.getName() + " (" + id + ")"
                         : id.toString());
                 
-                i++;
+                ++i;
                 
                 if (i != size) {
                     str.append(", ");
@@ -885,17 +1020,32 @@ public class WorldEdit {
      * @return 
      */
     public boolean handleArmSwing(LocalPlayer player) {
+        LocalSession session = getSession(player);
         if (player.getItemInHand() == config.navigationWand
                 && config.navigationWandMaxDistance > 0
                 && player.hasPermission("worldedit.navigation.jumpto")) {
-            WorldVector pos = player.getSolidBlockTrace(config.navigationWandMaxDistance);
+            // Bug workaround
+            // Blocks this from being used after the thru function
+            if (!session.canUseJumpto()){
+                session.toggleJumptoBlock();
+                return false;
+            }
+            WorldVector pos = player.getSolidBlockTrace(config.navigationWandMaxDistance);            
             if (pos != null) {
                 player.findFreePosition(pos);
             } else {
                 player.printError("No block in sight (or too far)!");
             }
+            return true;
         }
-        
+
+        Tool tool = session.getTool(player.getItemInHand());
+        if (tool != null && tool instanceof DoubleActionTraceTool) {
+            if (tool.canUse(player)) {
+                ((DoubleActionTraceTool) tool).actSecondary(server, config, player, session);
+                return true;
+            }
+        }
         return false;
     }
 
@@ -915,13 +1065,18 @@ public class WorldEdit {
             if (!player.passThroughForwardWall(40)) {
                 player.printError("Nothing to pass through!");
             }
+            // Bug workaround, so it wont do the Jumpto compass function
+            // Right after this teleport
+            if (session.canUseJumpto())
+                session.toggleJumptoBlock();
+            return true;
         }
         
         Tool tool = session.getTool(player.getItemInHand());
         
         if (tool != null && tool instanceof TraceTool) {
             if (tool.canUse(player)) {
-                ((TraceTool)tool).act(server, config, player, session);
+                ((TraceTool) tool).actPrimary(server, config, player, session);
                 return true;
             }
         }
@@ -976,11 +1131,6 @@ public class WorldEdit {
         if (player.getItemInHand() == config.wandItem) {
             if (session.isToolControlEnabled()
                     && player.hasPermission("worldedit.selection.pos")) {
-                // Bug workaround
-                if (clicked.getBlockX() == 0 && clicked.getBlockY() == 0
-                        && clicked.getBlockZ() == 0) {
-                    return false;
-                }
 
                 RegionSelector selector = session.getRegionSelector(player.getWorld());
                 if (selector.selectPrimary(clicked)) {
@@ -1054,11 +1204,6 @@ public class WorldEdit {
             long start = System.currentTimeMillis();
 
             try {
-                if (config.logCommands) {
-                    logger.info("WorldEdit: " + player.getName() + ": "
-                            + StringUtil.joinString(split, " "));
-                }
-
                 commands.execute(split, player, this, session, player, editSession);
             } catch (CommandPermissionsException e) {
                 player.printError("You don't have permission to do this.");

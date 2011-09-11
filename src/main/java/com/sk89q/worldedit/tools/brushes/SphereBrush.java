@@ -28,8 +28,8 @@ public class SphereBrush implements Brush {
     public SphereBrush() {
     }
     
-    public void build(EditSession editSession, Vector pos, Pattern mat, int size)
+    public void build(EditSession editSession, Vector pos, Pattern mat, double size)
             throws MaxChangedBlocksException {
-        editSession.makeSphere(pos, mat, size, true);
+        editSession.makeSphere(pos, mat, size, size, size, true);
     }
 }

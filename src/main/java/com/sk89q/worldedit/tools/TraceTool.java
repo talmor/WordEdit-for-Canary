@@ -40,6 +40,6 @@ public interface TraceTool extends Tool {
      * @param session
      * @return true to deny
      */
-    public boolean act(ServerInterface server, LocalConfiguration config,
+    public boolean actPrimary(ServerInterface server, LocalConfiguration config,
             LocalPlayer player, LocalSession session);
 }

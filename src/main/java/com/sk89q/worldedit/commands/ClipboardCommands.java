@@ -24,8 +24,11 @@ import java.io.IOException;
 import com.sk89q.minecraft.util.commands.Command;
 import com.sk89q.minecraft.util.commands.CommandContext;
 import com.sk89q.minecraft.util.commands.CommandPermissions;
+import com.sk89q.minecraft.util.commands.Logging;
+import static com.sk89q.minecraft.util.commands.Logging.LogMode.*;
 import com.sk89q.worldedit.*;
 import com.sk89q.worldedit.blocks.BaseBlock;
+import com.sk89q.worldedit.blocks.BlockID;
 import com.sk89q.worldedit.data.DataException;
 import com.sk89q.worldedit.regions.Region;
 
@@ -50,7 +53,7 @@ public class ClipboardCommands {
         Region region = session.getSelection(player.getWorld());
         Vector min = region.getMinimumPoint();
         Vector max = region.getMaximumPoint();
-        Vector pos = player.getBlockIn();
+        Vector pos = session.getPlacementPosition(player);
 
         CuboidClipboard clipboard = new CuboidClipboard(
                 max.subtract(min).add(new Vector(1, 1, 1)),
@@ -69,11 +72,12 @@ public class ClipboardCommands {
         max = 1
     )
     @CommandPermissions({"worldedit.clipboard.cut"})
+    @Logging(REGION)
     public static void cut(CommandContext args, WorldEdit we,
             LocalSession session, LocalPlayer player, EditSession editSession)
             throws WorldEditException {
 
-        BaseBlock block = new BaseBlock(0);
+        BaseBlock block = new BaseBlock(BlockID.AIR);
 
         if (args.argsLength() > 0) {
             block = we.getBlock(player, args.getString(0));
@@ -82,7 +86,7 @@ public class ClipboardCommands {
         Region region = session.getSelection(player.getWorld());
         Vector min = region.getMinimumPoint();
         Vector max = region.getMaximumPoint();
-        Vector pos = player.getBlockIn();
+        Vector pos = session.getPlacementPosition(player);
 
         CuboidClipboard clipboard = new CuboidClipboard(
                 max.subtract(min).add(new Vector(1, 1, 1)),
@@ -103,6 +107,7 @@ public class ClipboardCommands {
         max = 0
     )
     @CommandPermissions({"worldedit.clipboard.paste"})
+    @Logging(PLACEMENT)
     public static void paste(CommandContext args, WorldEdit we,
             LocalSession session, LocalPlayer player, EditSession editSession)
             throws WorldEditException {
@@ -149,7 +154,8 @@ public class ClipboardCommands {
     @Command(
         aliases = {"/flip"},
         usage = "[dir]",
-        desc = "Flip the contents of the clipboard",
+        flags = "p",
+        desc = "Flip the contents of the clipboard. To flip it around yourself, use the -p flag.",
         min = 0,
         max = 1
     )
@@ -162,7 +168,7 @@ public class ClipboardCommands {
                 args.argsLength() > 0 ? args.getString(0).toLowerCase() : "me");
 
         CuboidClipboard clipboard = session.getClipboard();
-        clipboard.flip(dir);
+        clipboard.flip(dir, args.hasFlag('p'));
         player.print("Clipboard flipped.");
     }
     

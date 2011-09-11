@@ -36,12 +36,12 @@ import com.sk89q.worldedit.tools.brushes.SphereBrush;
  * @author sk89q
  */
 public class BrushTool implements TraceTool {
-    private static int MAX_RANGE = 500;
-    private int range = -1;
+    protected static int MAX_RANGE = 500;
+    protected int range = -1;
     private Mask mask = null;
     private Brush brush = new SphereBrush();
     private Pattern material = new SingleBlockPattern(new BaseBlock(BlockID.COBBLESTONE));
-    private int size = 1;
+    private double size = 1;
     private String permission;
     
     /**
@@ -125,17 +125,17 @@ public class BrushTool implements TraceTool {
      * 
      * @return
      */
-    public int getSize() {
+    public double getSize() {
         return size;
     }
 
     /**
      * Set the set brush size.
      * 
-     * @param size
+     * @param radius
      */
-    public void setSize(int size) {
-        this.size = size;
+    public void setSize(double radius) {
+        this.size = radius;
     }
     
     /**
@@ -164,7 +164,7 @@ public class BrushTool implements TraceTool {
      * @param session
      * @return true to deny
      */
-    public boolean act(ServerInterface server, LocalConfiguration config,
+    public boolean actPrimary(ServerInterface server, LocalConfiguration config,
             LocalPlayer player, LocalSession session) {
         WorldVector target = null;
         if (this.range > -1) {

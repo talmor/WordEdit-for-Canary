@@ -82,9 +82,9 @@ public class SnapshotRestore {
 
         // First, we need to group points by chunk so that we only need
         // to keep one chunk in memory at any given moment
-        for (int x = min.getBlockX(); x <= max.getBlockX(); x++) {
-            for (int y = min.getBlockY(); y <= max.getBlockY(); y++) {
-                for (int z = min.getBlockZ(); z <= max.getBlockZ(); z++) {
+        for (int x = min.getBlockX(); x <= max.getBlockX(); ++x) {
+            for (int y = min.getBlockY(); y <= max.getBlockY(); ++y) {
+                for (int z = min.getBlockZ(); z <= max.getBlockZ(); ++z) {
                     Vector pos = new Vector(x, y, z);
                     BlockVector2D chunkPos = ChunkStore.toChunk(pos);
 
@@ -147,7 +147,7 @@ public class SnapshotRestore {
             Chunk chunk;
 
             try {
-                chunk = chunkStore.getChunk(chunkPos);
+                chunk = chunkStore.getChunk(chunkPos, editSession.getWorld().getName());
                 // Good, the chunk could be at least loaded
 
                 // Now just copy blocks!
@@ -157,6 +157,9 @@ public class SnapshotRestore {
                 }
             } catch (MissingChunkException me) {
                 missingChunks.add(chunkPos);
+            } catch (MissingWorldException me) {
+                errorChunks.add(chunkPos);
+                lastErrorMessage = me.getMessage();
             } catch (DataException de) {
                 errorChunks.add(chunkPos);
                 lastErrorMessage = de.getMessage();

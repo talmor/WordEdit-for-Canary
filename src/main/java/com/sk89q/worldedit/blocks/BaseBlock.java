@@ -19,6 +19,7 @@
 
 package com.sk89q.worldedit.blocks;
 
+import com.sk89q.worldedit.CuboidClipboard.FlipDirection;
 import com.sk89q.worldedit.data.BlockData;
 
 /**
@@ -34,7 +35,7 @@ public class BaseBlock {
     /**
      * BaseBlock data.
      */
-    private char data = 0;
+    private byte data = 0;
 
     /**
      * Construct the block with its type.
@@ -53,7 +54,7 @@ public class BaseBlock {
      */
     public BaseBlock(int type, int data) {
         this.type = (short)type;
-        this.data = (char)data;
+        this.data = (byte)data;
     }
 
     /**
@@ -81,7 +82,7 @@ public class BaseBlock {
      * @param data the data to set
      */
     public void setData(int data) {
-        this.data = (char)data;
+        this.data = (byte)data;
     }
 
     /**
@@ -97,20 +98,51 @@ public class BaseBlock {
      * Rotate this block 90 degrees.
      */
     public void rotate90() {
-        data = (char)BlockData.rotate90(type, data);
+        data = (byte)BlockData.rotate90(type, data);
     }
     
     /**
      * Rotate this block -90 degrees.
      */
     public void rotate90Reverse() {
-        data = (char)BlockData.rotate90Reverse(type, data);
+        data = (byte)BlockData.rotate90Reverse(type, data);
     }
     
     /**
      * Flip this block.
      */
-    public void flip() {
-        data = (char)BlockData.flip(type, data);
+    public BaseBlock flip() {
+        data = (byte) BlockData.flip(type, data);
+        return this;
+    }
+    /**
+     * Flip this block.
+     * @param direction
+     */
+    public BaseBlock flip(FlipDirection direction) {
+        data = (byte) BlockData.flip(type, data, direction);
+        return this;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof BaseBlock)) {
+            return false;
+        }
+        return (type == ((BaseBlock)o).type) && (data == ((BaseBlock)o).data);
+    }
+    
+    @Override
+    public String toString() {
+        return "BaseBlock id: " + getType() + " with damage: " + getData();
+    }
+
+    public boolean inIterable(Iterable<BaseBlock> iter) {
+        for (BaseBlock block : iter) {
+            if (block.equals(this)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

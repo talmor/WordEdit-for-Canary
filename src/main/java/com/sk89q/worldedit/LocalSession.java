@@ -77,6 +77,7 @@ public class LocalSession {
     private boolean fastMode = false;
     private Mask mask;
     private TimeZone timezone = TimeZone.getDefault();
+    private Boolean jumptoBlock = true;
 
     /**
      * Construct the object.
@@ -141,7 +142,7 @@ public class LocalSession {
      * @return whether anything was undone
      */
     public EditSession undo(BlockBag newBlockBag) {
-        historyPointer--;
+        --historyPointer;
         if (historyPointer >= 0) {
             EditSession editSession = history.get(historyPointer);
             EditSession newEditSession =
@@ -170,7 +171,7 @@ public class LocalSession {
             newEditSession.enableQueue();
             newEditSession.setFastMode(fastMode);
             editSession.redo(newEditSession);
-            historyPointer++;
+            ++historyPointer;
             return editSession;
         }
 
@@ -479,8 +480,10 @@ public class LocalSession {
     public void setTool(int item, Tool tool) throws InvalidToolBindException {
         if (item > 0 && item < 255) {
             throw new InvalidToolBindException(item, "Blocks can't be used");
-        } else if (item == 263 || item == 348) {
+        /* } else if (item == ItemType.COAL.getID() || item == ItemType.LIGHTSTONE_DUST.getID()) {
             throw new InvalidToolBindException(item, "Item is not usuable");
+            // let people deal with craftbook themselves, not everyone uses it
+        */
         } else if (item == config.wandItem) {
             throw new InvalidToolBindException(item, "Already used for the wand");
         } else if (item == config.navigationWand) {
@@ -591,7 +594,7 @@ public class LocalSession {
                     player.dispatchCUIEvent(
                             new SelectionPointEvent(i, pt, size));
                 }
-                i++;
+                ++i;
             }
         }
     }
@@ -701,5 +704,21 @@ public class LocalSession {
      */
     public void setMask(Mask mask) {
         this.mask = mask;
+    }
+
+    /**
+     * This is used as a workaround for a bug.
+     * It blocks the compass from using the jumpto function after the thru function
+     */
+    public void toggleJumptoBlock() {
+        this.jumptoBlock = !jumptoBlock;
+    }
+
+    /**
+     * This is used as a workaround for a bug.
+     * @return true if the compass's jumpto function can be used again
+     */
+    public Boolean canUseJumpto() {
+        return jumptoBlock;
     }
 }

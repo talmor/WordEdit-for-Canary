@@ -64,7 +64,7 @@ public class BrushCommands {
         
         LocalConfiguration config = we.getConfiguration();
 
-        int radius = args.argsLength() > 1 ? args.getInteger(1) : 2;
+        double radius = args.argsLength() > 1 ? args.getDouble(1) : 2;
         if (radius > config.maxBrushRadius) {
             player.printError("Maximum allowed brush radius: "
                     + config.maxBrushRadius);
@@ -82,7 +82,7 @@ public class BrushCommands {
             tool.setBrush(new SphereBrush(), "worldedit.brush.sphere");
         }
 
-        player.print(String.format("Sphere brush shape equipped (%d).",
+        player.print(String.format("Sphere brush shape equipped (%.0f).",
                 radius));
     }
 
@@ -101,7 +101,7 @@ public class BrushCommands {
         
         LocalConfiguration config = we.getConfiguration();
 
-        int radius = args.argsLength() > 1 ? args.getInteger(1) : 2;
+        double radius = args.argsLength() > 1 ? args.getDouble(1) : 2;
         if (radius > config.maxBrushRadius) {
             player.printError("Maximum allowed brush radius: "
                     + config.maxBrushRadius);
@@ -126,7 +126,7 @@ public class BrushCommands {
             tool.setBrush(new CylinderBrush(height), "worldedit.brush.cylinder");
         }
         
-        player.print(String.format("Cylinder brush shape equipped (%d by %d).",
+        player.print(String.format("Cylinder brush shape equipped (%.0f by %d).",
                 radius, height));
     }
 
@@ -171,6 +171,7 @@ public class BrushCommands {
     @Command(
         aliases = {"smooth"},
         usage = "[size] [iterations]",
+        flags = "n",
         desc = "Choose the terrain softener brush",
         min = 0,
         max = 2
@@ -182,7 +183,7 @@ public class BrushCommands {
         
         LocalConfiguration config = we.getConfiguration();
 
-        int radius = args.argsLength() > 0 ? args.getInteger(0) : 2;
+        double radius = args.argsLength() > 0 ? args.getDouble(0) : 2;
         if (radius > config.maxBrushRadius) {
             player.printError("Maximum allowed brush radius: "
                     + config.maxBrushRadius);
@@ -193,9 +194,9 @@ public class BrushCommands {
 
         BrushTool tool = session.getBrushTool(player.getItemInHand());
         tool.setSize(radius);
-        tool.setBrush(new SmoothBrush(iterations), "worldedit.brush.smooth");
+        tool.setBrush(new SmoothBrush(iterations, args.hasFlag('n')), "worldedit.brush.smooth");
 
-        player.print(String.format("Smooth brush equipped (%d x %dx).",
+        player.print(String.format("Smooth brush equipped (%.0f x %dx, using " + (args.hasFlag('n') ? "natural blocks only" : "any block") + ").",
                 radius, iterations));
     }
     
@@ -213,7 +214,7 @@ public class BrushCommands {
         
         LocalConfiguration config = we.getConfiguration();
 
-        int radius = args.argsLength() > 1 ? args.getInteger(1) : 5;
+        double radius = args.argsLength() > 1 ? args.getDouble(1) : 5;
         if (radius > config.maxBrushRadius) {
             player.printError("Maximum allowed brush radius: "
                     + config.maxBrushRadius);
@@ -227,7 +228,7 @@ public class BrushCommands {
         tool.setMask(new BlockTypeMask(BlockID.FIRE));
         tool.setBrush(new SphereBrush(), "worldedit.brush.ex");
 
-        player.print(String.format("Extinguisher equipped (%d).",
+        player.print(String.format("Extinguisher equipped (%.0f).",
                 radius));
     }
 }

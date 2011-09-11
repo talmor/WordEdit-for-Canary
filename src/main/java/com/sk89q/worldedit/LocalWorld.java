@@ -22,6 +22,8 @@ package com.sk89q.worldedit;
 import java.util.Random;
 import com.sk89q.worldedit.blocks.BaseBlock;
 import com.sk89q.worldedit.blocks.BaseItemStack;
+import com.sk89q.worldedit.blocks.BlockID;
+import com.sk89q.worldedit.blocks.ItemType;
 import com.sk89q.worldedit.regions.Region;
 
 /**
@@ -34,6 +36,13 @@ public abstract class LocalWorld {
      * Random generator.
      */
     protected Random random = new Random();
+    
+    /**
+     * Get the name of the world.
+     * 
+     * @return
+     */
+    public abstract String getName();
 
     /**
      * Set block type.
@@ -69,6 +78,7 @@ public abstract class LocalWorld {
      * @param pt
      * @param data
      */
+
     public abstract void setBlockData(Vector pt, int data);
 
     /**
@@ -77,10 +87,34 @@ public abstract class LocalWorld {
      * @param pt
      * @param data
      */
-    public void setBlockDataFast(Vector pt, int data) {
-        setBlockData(pt, data);
-    }
+    public abstract void setBlockDataFast(Vector pt, int data);
 
+    /**
+     * set block type & data
+     * @param pt
+     * @param type
+     * @param data
+     * @return
+     */
+    public boolean setTypeIdAndData(Vector pt, int type, int data) {
+        boolean ret = setBlockType(pt, type);
+        setBlockData(pt, data);
+        return ret;
+    }
+    
+    /**
+     * set block type & data
+     * @param pt
+     * @param type
+     * @param data
+     * @return 
+     */
+    public boolean setTypeIdAndDataFast(Vector pt, int type, int data) {
+        boolean ret = setBlockTypeFast(pt, type);
+        setBlockDataFast(pt, data);
+        return ret;
+    }
+    
     /**
      * Get block data.
      * 
@@ -195,7 +229,7 @@ public abstract class LocalWorld {
      * @param times
      */
     public void dropItem(Vector pt, BaseItemStack item, int times) {
-        for (int i = 0; i < times; i++) {
+        for (int i = 0; i < times; ++i) {
             dropItem(pt, item);
         }
     }
@@ -217,62 +251,150 @@ public abstract class LocalWorld {
         int type = getBlockType(pt);
         //setBlockType(pt, 0);
 
-        if (type == 1) { dropItem(pt, new BaseItemStack(4)); } // Stone
-        else if (type == 2) { dropItem(pt, new BaseItemStack(3)); } // Grass
-        else if (type == 7) { } // Bedrock
-        else if (type == 8) { } // Water
-        else if (type == 9) { } // Water
-        else if (type == 10) { } // Lava
-        else if (type == 11) { } // Lava
-        else if (type == 13) { // Gravel
-            dropItem(pt, new BaseItemStack(type));
+        switch (type) {
+        case BlockID.STONE:
+            dropItem(pt, new BaseItemStack(BlockID.COBBLESTONE));
+            break;
 
+        case BlockID.GRASS:
+            dropItem(pt, new BaseItemStack(BlockID.DIRT));
+            break;
+
+        case BlockID.GRAVEL:
             if (random.nextDouble() >= 0.9) {
-                dropItem(pt, new BaseItemStack(318));
+                dropItem(pt, new BaseItemStack(ItemType.FLINT.getID()));
+            } else {
+                dropItem(pt, new BaseItemStack(type));
             }
-        }
-        else if (type == 16) { dropItem(pt, new BaseItemStack(263)); } // Coal ore
-        else if (type == 17) { dropItem(pt, new BaseItemStack(17, 1, (short)getBlockData(pt))); } // Log
-        else if (type == 18) { // Leaves
+            break;
+
+        case BlockID.COAL_ORE:
+            dropItem(pt, new BaseItemStack(ItemType.COAL.getID()));
+            break;
+
+        case BlockID.LOG:
+            dropItem(pt, new BaseItemStack(type, 1, (short) getBlockData(pt)));
+            break;
+
+        case BlockID.LEAVES:
             if (random.nextDouble() > 0.95) {
-                dropItem(pt, new BaseItemStack(6));
+                dropItem(pt, new BaseItemStack(BlockID.SAPLING, 1, (short) getBlockData(pt)));
             }
-        }
-        else if (type == 20) { } // Glass
-        else if (type == 21) { dropItem(pt, new BaseItemStack(351, 1, (short)4), (random.nextInt(5)+4)); }
-        else if (type == 26) { dropItem(pt, new BaseItemStack(355)); } // Bed
-        else if (type == 35) { dropItem(pt, new BaseItemStack(35, 1, (short)getBlockData(pt))); } // Cloth
-        else if (type == 43) { // Double step
-            dropItem(pt, new BaseItemStack(44, 1, (short)getBlockData(pt)), 2);
-        }
-        else if (type == 44) { dropItem(pt, new BaseItemStack(44, 1, (short)getBlockData(pt))); } // Step
-        else if (type == 47) { } // Bookshelves
-        else if (type == 51) { } // Fire
-        else if (type == 52) { } // Mob spawner
-        else if (type == 53) { dropItem(pt, new BaseItemStack(5)); } // Wooden stairs
-        else if (type == 55) { dropItem(pt, new BaseItemStack(331)); } // Redstone wire
-        else if (type == 56) { dropItem(pt, new BaseItemStack(264)); } // Diamond ore
-        else if (type == 59) { dropItem(pt, new BaseItemStack(295)); } // Crops
-        else if (type == 60) { dropItem(pt, new BaseItemStack(3)); } // Soil
-        else if (type == 62) { dropItem(pt, new BaseItemStack(61)); } // Furnace
-        else if (type == 63) { dropItem(pt, new BaseItemStack(323)); } // Sign post
-        else if (type == 64) { dropItem(pt, new BaseItemStack(324)); } // Wood door
-        else if (type == 67) { dropItem(pt, new BaseItemStack(4)); } // Cobblestone stairs
-        else if (type == 68) { dropItem(pt, new BaseItemStack(323)); } // Wall sign
-        else if (type == 71) { dropItem(pt, new BaseItemStack(330)); } // Iron door
-        else if (type == 73) { dropItem(pt, new BaseItemStack(331), (random.nextInt(2)+4)); } // Redstone ore
-        else if (type == 74) { dropItem(pt, new BaseItemStack(331), (random.nextInt(2)+4)); } // Glowing redstone ore
-        else if (type == 75) { dropItem(pt, new BaseItemStack(76)); } // Redstone torch
-        else if (type == 78) { } // Snow
-        else if (type == 79) { } // Ice
-        else if (type == 82) { dropItem(pt, new BaseItemStack(337), 4); } // Clay
-        else if (type == 83) { dropItem(pt, new BaseItemStack(338)); } // Reed
-        else if (type == 89) { dropItem(pt, new BaseItemStack(348)); } // Lightstone
-        else if (type == 90) { } // Portal
-        else if (type == 93) { dropItem(pt, new BaseItemStack(356)); } // Repeater
-        else if (type == 94) { dropItem(pt, new BaseItemStack(356)); } // Repeater
-        else if (type != 0) {
+            break;
+
+        case BlockID.LAPIS_LAZULI_ORE:
+            dropItem(pt, new BaseItemStack(ItemType.INK_SACK.getID(), 1, (short) 4), (random.nextInt(5) + 4));
+            break;
+
+        case BlockID.BED:
+            dropItem(pt, new BaseItemStack(ItemType.BED_ITEM.getID()));
+            break;
+
+        case BlockID.LONG_GRASS:
+            if (random.nextInt(8) == 0) dropItem(pt, new BaseItemStack(ItemType.SEEDS.getID()));
+            break;
+
+        case BlockID.CLOTH:
+            dropItem(pt, new BaseItemStack(type, 1, (short) getBlockData(pt)));
+            break;
+
+        case BlockID.DOUBLE_STEP:
+            dropItem(pt, new BaseItemStack(BlockID.STEP, 1, (short) getBlockData(pt)), 2);
+            break;
+
+        case BlockID.STEP:
+            dropItem(pt, new BaseItemStack(type, 1, (short) getBlockData(pt)));
+            break;
+
+        case BlockID.WOODEN_STAIRS:
+            dropItem(pt, new BaseItemStack(BlockID.WOOD));
+            break;
+
+        case BlockID.REDSTONE_WIRE:
+            dropItem(pt, new BaseItemStack(ItemType.REDSTONE_DUST.getID()));
+            break;
+
+        case BlockID.DIAMOND_ORE:
+            dropItem(pt, new BaseItemStack(ItemType.DIAMOND.getID()));
+            break;
+
+        case BlockID.CROPS:
+            dropItem(pt, new BaseItemStack(ItemType.SEEDS.getID()));
+            break;
+
+        case BlockID.SOIL:
+            dropItem(pt, new BaseItemStack(BlockID.DIRT));
+            break;
+
+        case BlockID.BURNING_FURNACE:
+            dropItem(pt, new BaseItemStack(BlockID.FURNACE));
+            break;
+
+        case BlockID.SIGN_POST:
+            dropItem(pt, new BaseItemStack(ItemType.SIGN.getID()));
+            break;
+
+        case BlockID.WOODEN_DOOR:
+            dropItem(pt, new BaseItemStack(ItemType.WOODEN_DOOR_ITEM.getID()));
+            break;
+
+        case BlockID.COBBLESTONE_STAIRS:
+            dropItem(pt, new BaseItemStack(BlockID.COBBLESTONE));
+            break;
+
+        case BlockID.WALL_SIGN:
+            dropItem(pt, new BaseItemStack(ItemType.SIGN.getID()));
+            break;
+
+        case BlockID.IRON_DOOR:
+            dropItem(pt, new BaseItemStack(ItemType.IRON_DOOR_ITEM.getID()));
+            break;
+
+        case BlockID.REDSTONE_ORE:
+        case BlockID.GLOWING_REDSTONE_ORE:
+            dropItem(pt, new BaseItemStack(ItemType.REDSTONE_DUST.getID()), (random.nextInt(2) + 4));
+            break;
+
+        case BlockID.REDSTONE_TORCH_OFF:
+            dropItem(pt, new BaseItemStack(BlockID.REDSTONE_TORCH_ON));
+            break;
+
+        case BlockID.CLAY:
+            dropItem(pt, new BaseItemStack(ItemType.CLAY_BALL.getID()), 4);
+            break;
+
+        case BlockID.REED:
+            dropItem(pt, new BaseItemStack(ItemType.SUGAR_CANE_ITEM.getID()));
+            break;
+
+        case BlockID.LIGHTSTONE:
+            dropItem(pt, new BaseItemStack(ItemType.LIGHTSTONE_DUST.getID()), (random.nextInt(3) + 2));
+            break;
+
+        case BlockID.REDSTONE_REPEATER_OFF:
+        case BlockID.REDSTONE_REPEATER_ON:
+            dropItem(pt, new BaseItemStack(ItemType.REDSTONE_REPEATER.getID()));
+            break;
+
+        case BlockID.BEDROCK:
+        case BlockID.WATER:
+        case BlockID.STATIONARY_WATER:
+        case BlockID.LAVA:
+        case BlockID.STATIONARY_LAVA:
+        case BlockID.GLASS:
+        case BlockID.PISTON_EXTENSION:
+        case BlockID.BOOKCASE:
+        case BlockID.FIRE:
+        case BlockID.MOB_SPAWNER:
+        case BlockID.SNOW:
+        case BlockID.ICE:
+        case BlockID.PORTAL:
+        case BlockID.AIR:
+            break;
+
+        default:
             dropItem(pt, new BaseItemStack(type));
+            break;
         }
     }
 
@@ -312,8 +434,15 @@ public abstract class LocalWorld {
      * @return
      */
     public boolean isValidBlockType(int type) {
-        return !((type > 32 && type < 35) || type == 36 || type == 29 || type > 96);
+        return type >= 0 && type < 96;
     }
+
+    /**
+     * Checks if the chunk pt is in is loaded. if not, loads the chunk
+     *
+     * @param pt Position to check
+     */
+    public abstract void checkLoadedChuck(Vector pt);
 
     /**
      * Compare if the other world is equal.
@@ -332,3 +461,4 @@ public abstract class LocalWorld {
     @Override
     public abstract int hashCode();
 }
+

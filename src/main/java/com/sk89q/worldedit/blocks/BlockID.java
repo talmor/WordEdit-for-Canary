@@ -24,7 +24,7 @@ package com.sk89q.worldedit.blocks;
  * 
  * @author sk89q
  */
-public final class BlockID {    
+public final class BlockID {
     public static final int AIR = 0;
     public static final int STONE = 1;
     public static final int GRASS = 2;
@@ -124,3 +124,4 @@ public final class BlockID {
     public static final int LOCKED_CHEST = 95;
     public static final int TRAP_DOOR = 96;
 }
+

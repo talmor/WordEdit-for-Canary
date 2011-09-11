@@ -314,10 +314,15 @@ public class CanaryWorld extends LocalWorld {
      * @param times
      */
     public void dropItem(Vector pt, int type, int count) {
-        etc.getServer().getWorld(1).dropItem(pt.getBlockX(), pt.getBlockY(), pt.getBlockZ(), type, count);
+        world.dropItem(pt.getBlockX(), pt.getBlockY(), pt.getBlockZ(), type, count);
     }
 
-    /**
+    @Override
+    public void dropItem(Vector pt, BaseItemStack item) {
+       	world.dropItem(pt.getX(),pt.getY(),pt.getZ(),item.getType(),item.getAmount(),item.getDamage());
+    }
+
+	/**
      * Kill mobs in an area.
      * 
      * @param origin
@@ -528,10 +533,7 @@ public class CanaryWorld extends LocalWorld {
         }
     }
 
-    @Override
-    public void dropItem(Vector pt, BaseItemStack item) {
-        world.dropItem(CanaryUtil.toLocation(world, pt), item.getType(), item.getAmount());
-    }
+
 
     @Override
     public int killMobs(Vector origin, int radius, boolean killPets) {
@@ -666,4 +668,22 @@ public class CanaryWorld extends LocalWorld {
 
         return true;
     }
+
+	@Override
+	public String getName() {
+		return world.getType().name();
+	}
+
+	@Override
+	public void setBlockDataFast(Vector pt, int data) {
+		setBlockData(pt, data);
+		
+	}
+
+	@Override
+	public void checkLoadedChuck(Vector pt) {
+		if (!world.isChunkLoaded(pt.getBlockX(), pt.getBlockY(), pt.getBlockZ())) {
+			world.loadChunk(pt.getBlockX(),pt.getBlockY(),pt.getBlockZ());
+		}
+	}
 }

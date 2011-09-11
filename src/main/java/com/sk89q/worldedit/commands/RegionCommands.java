@@ -19,14 +19,19 @@
 
 package com.sk89q.worldedit.commands;
 
+
 import java.util.Set;
 import com.sk89q.minecraft.util.commands.Command;
 import com.sk89q.minecraft.util.commands.CommandContext;
 import com.sk89q.minecraft.util.commands.CommandPermissions;
+import com.sk89q.minecraft.util.commands.Logging;
+import static com.sk89q.minecraft.util.commands.Logging.LogMode.*;
 import com.sk89q.worldedit.*;
 import com.sk89q.worldedit.blocks.BaseBlock;
+import com.sk89q.worldedit.blocks.BlockID;
 import com.sk89q.worldedit.filtering.GaussianKernel;
 import com.sk89q.worldedit.filtering.HeightMapFilter;
+import com.sk89q.worldedit.masks.Mask;
 import com.sk89q.worldedit.patterns.*;
 import com.sk89q.worldedit.regions.Region;
 import com.sk89q.worldedit.regions.RegionOperationException;
@@ -45,6 +50,7 @@ public class RegionCommands {
         max = 1
     )
     @CommandPermissions({"worldedit.region.set"})
+    @Logging(REGION)
     public static void set(CommandContext args, WorldEdit we,
             LocalSession session, LocalPlayer player, EditSession editSession)
             throws WorldEditException {
@@ -71,17 +77,18 @@ public class RegionCommands {
         max = 2
     )
     @CommandPermissions({"worldedit.region.replace"})
+    @Logging(REGION)
     public static void replace(CommandContext args, WorldEdit we,
             LocalSession session, LocalPlayer player, EditSession editSession)
             throws WorldEditException {
         
-        Set<Integer> from;
+        Set<BaseBlock> from;
         Pattern to;
         if (args.argsLength() == 1) {
             from = null;
             to = we.getBlockPattern(player, args.getString(0));
         } else {
-            from = we.getBlockIDs(player, args.getString(0), true);
+            from = we.getBlocks(player, args.getString(0), true);
             to = we.getBlockPattern(player, args.getString(1));
         }
 
@@ -104,6 +111,7 @@ public class RegionCommands {
         max = 1
     )
     @CommandPermissions({"worldedit.region.overlay"})
+    @Logging(REGION)
     public static void overlay(CommandContext args, WorldEdit we,
             LocalSession session, LocalPlayer player, EditSession editSession)
             throws WorldEditException {
@@ -122,6 +130,24 @@ public class RegionCommands {
     }
 
     @Command(
+        aliases = {"/naturalize"},
+        usage = "",
+        desc = "3 layers of dirt on top then rock below",
+        min = 0,
+        max = 0
+    )
+    @CommandPermissions({"worldedit.region.naturalize"})
+    @Logging(REGION)
+    public static void naturalize(CommandContext args, WorldEdit we,
+            LocalSession session, LocalPlayer player, EditSession editSession)
+            throws WorldEditException {
+
+        Region region = session.getSelection(player.getWorld());
+        int affected = editSession.naturalizeCuboidBlocks(region);
+        player.print(affected + " block(s) have been naturalized.");
+    }
+
+    @Command(
         aliases = {"/walls"},
         usage = "<block>",
         desc = "Build the four sides of the selection",
@@ -129,12 +155,18 @@ public class RegionCommands {
         max = 1
     )
     @CommandPermissions({"worldedit.region.walls"})
+    @Logging(REGION)
     public static void walls(CommandContext args, WorldEdit we,
             LocalSession session, LocalPlayer player, EditSession editSession)
             throws WorldEditException {
 
-        BaseBlock block = we.getBlock(player, args.getString(0));
-        int affected = editSession.makeCuboidWalls(session.getSelection(player.getWorld()), block);
+        Pattern pattern = we.getBlockPattern(player, args.getString(0));
+        int affected;
+        if (pattern instanceof SingleBlockPattern) {
+            affected = editSession.makeCuboidWalls(session.getSelection(player.getWorld()), ((SingleBlockPattern) pattern).getBlock());
+        } else {
+            affected = editSession.makeCuboidWalls(session.getSelection(player.getWorld()), pattern);
+        }
         
         player.print(affected + " block(s) have been changed.");
     }
@@ -142,28 +174,37 @@ public class RegionCommands {
     @Command(
         aliases = {"/faces", "/outline"},
         usage = "<block>",
-        desc = "Build the walls, ceiling, and roof of a selection",
+        desc = "Build the walls, ceiling, and floor of a selection",
         min = 1,
         max = 1
     )
     @CommandPermissions({"worldedit.region.faces"})
+    @Logging(REGION)
     public static void faces(CommandContext args, WorldEdit we,
             LocalSession session, LocalPlayer player, EditSession editSession)
             throws WorldEditException {
+        
+        Pattern pattern = we.getBlockPattern(player, args.getString(0));
+        int affected;
+        if (pattern instanceof SingleBlockPattern) {
+            affected = editSession.makeCuboidFaces(session.getSelection(player.getWorld()), ((SingleBlockPattern) pattern).getBlock());
+        } else {
+            affected = editSession.makeCuboidFaces(session.getSelection(player.getWorld()), pattern);
+        }
 
-        BaseBlock block = we.getBlock(player, args.getString(0));
-        int affected = editSession.makeCuboidFaces(session.getSelection(player.getWorld()), block);
         player.print(affected + " block(s) have been changed.");
     }
 
     @Command(
         aliases = {"/smooth"},
         usage = "[iterations]",
+        flags = "n",
         desc = "Smooth the elevation in the selection",
         min = 0,
         max = 1
     )
     @CommandPermissions({"worldedit.region.smooth"})
+    @Logging(REGION)
     public static void smooth(CommandContext args, WorldEdit we,
             LocalSession session, LocalPlayer player, EditSession editSession)
             throws WorldEditException {
@@ -173,7 +214,7 @@ public class RegionCommands {
             iterations = args.getInteger(0);
         }
 
-        HeightMap heightMap = new HeightMap(editSession, session.getSelection(player.getWorld()));
+        HeightMap heightMap = new HeightMap(editSession, session.getSelection(player.getWorld()), args.hasFlag('n'));
         HeightMapFilter filter = new HeightMapFilter(new GaussianKernel(5, 1.0));
         int affected = heightMap.applyFilter(filter, iterations);
         player.print("Terrain's height map smoothed. " + affected + " block(s) changed.");
@@ -189,6 +230,7 @@ public class RegionCommands {
         max = 3
     )
     @CommandPermissions({"worldedit.region.move"})
+    @Logging(ORIENTATION_REGION)
     public static void move(CommandContext args, WorldEdit we,
             LocalSession session, LocalPlayer player, EditSession editSession)
             throws WorldEditException {
@@ -202,7 +244,7 @@ public class RegionCommands {
         if (args.argsLength() > 2) {
             replace = we.getBlock(player, args.getString(2));
         } else {
-            replace = new BaseBlock(0);
+            replace = new BaseBlock(BlockID.AIR);
         }
 
         int affected = editSession.moveCuboidRegion(session.getSelection(player.getWorld()),
@@ -234,6 +276,7 @@ public class RegionCommands {
         max = 2
     )
     @CommandPermissions({"worldedit.region.stack"})
+    @Logging(ORIENTATION_REGION)
     public static void stack(CommandContext args, WorldEdit we,
             LocalSession session, LocalPlayer player, EditSession editSession)
             throws WorldEditException {
@@ -269,12 +312,16 @@ public class RegionCommands {
         max = 0
     )
     @CommandPermissions({"worldedit.regen"})
+    @Logging(REGION)
     public static void regenerateChunk(CommandContext args, WorldEdit we,
             LocalSession session, LocalPlayer player, EditSession editSession)
             throws WorldEditException {
         
         Region region = session.getSelection(player.getWorld());
+        Mask mask = session.getMask();
+        session.setMask(null);
         player.getWorld().regenerate(region, editSession);
+        session.setMask(mask);
         player.print("Region regenerated.");
     }
 }
