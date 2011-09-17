@@ -18,111 +18,106 @@
 
 package com.sk89q.minecraft.util.commands;
 
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import static com.sk89q.util.ArrayUtil.removePortionOfArray;
 
 public class CommandContext {
-    protected static final String QUOTE_CHARS = "\'\"";
     protected final String[] args;
     protected final Set<Character> booleanFlags = new HashSet<Character>();
     protected final Map<Character, String> valueFlags = new HashMap<Character, String>();
 
-    public CommandContext(String args) {
-        this(args.split(" "));
+    public CommandContext(String args) throws CommandException {
+        this(args.split(" "), null);
     }
 
-    public CommandContext(String[] args) {
-        char quotedChar;
-        for (int i = 1; i < args.length; ++i) {
-            if (args[i].length() == 0) {
-                args = removePortionOfArray(args, i, i, null);
-            } else if (QUOTE_CHARS.indexOf(String.valueOf(args[i].charAt(0))) != -1) {
-                StringBuilder build = new StringBuilder();
-                quotedChar = args[i].charAt(0);
-                int endIndex = i;
-                for (; endIndex < args.length; endIndex++) {
-                    if (args[endIndex].charAt(args[endIndex].length() - 1) == quotedChar) {
-                        if (endIndex != i) build.append(" ");
-                        build.append(args[endIndex].substring(endIndex == i ? 1 : 0, args[endIndex].length() - 1));
-                        break;
-                    } else if (endIndex == i) {
-                        build.append(args[endIndex].substring(1));
-                    } else {
-                        build.append(" ").append(args[endIndex]);
-                    }
-                }
-                args = removePortionOfArray(args, i, endIndex, build.toString());
-            } else if (args[i].charAt(0) == '-' && args[i].matches("^-[a-zA-Z]+$")) {
-                for (int k = 1; k < args[i].length(); ++k) {
-                    booleanFlags.add(args[i].charAt(k));
-                }
-                args = removePortionOfArray(args, i, i, null);
-            }
-        }
-        this.args = args;
+    public CommandContext(String[] args) throws CommandException {
+        this(args, null);
     }
 
-    public CommandContext(String args, Set<Character> isValueFlag) throws CommandException {
-        this(args.split(" "), isValueFlag);
+    public CommandContext(String args, Set<Character> valueFlags) throws CommandException {
+        this(args.split(" "), valueFlags);
     }
 
     /**
-     * @param args An array with arguments empty strings will be ignored by most things
-     * @param isValueFlag A set containing all value flags. Pass null to disable flag parsing altogether.
-     * @throws CommandException This is thrown if a value flag was passed without a value.
+     * @param args An array with arguments. Empty strings outside quotes will be removed.
+     * @param valueFlags A set containing all value flags. Pass null to disable value flag parsing.
+     * @throws CommandException This is thrown if flag fails for some reason.
      */
-    public CommandContext(String[] args, Set<Character> isValueFlag) throws CommandException {
-        if (isValueFlag == null) {
-            this.args = args;
-            return;
-        }
-        
-        int nextArg = 1;
-
-        while (nextArg < args.length) {
-            // Fetch argument
-            String arg = args[nextArg++];
-
-            // Empty argument? (multiple consecutive spaces)
-            if (arg.isEmpty())
+    public CommandContext(String[] args, Set<Character> valueFlags) throws CommandException {
+        // Go through empty args and multiword args first
+        for (int i = 1; i < args.length; ++i) {
+            final String arg = args[i];
+            if (arg.isEmpty()) {
+                args = removePortionOfArray(args, i, i, null);
                 continue;
+            }
 
-            // No more flags?
-            if (arg.charAt(0) != '-' || arg.length() == 1 || !arg.matches("^-[a-zA-Z]+$")) {
-                --nextArg;
+            switch (arg.charAt(0)) {
+            case '\'':
+            case '"':
+                final StringBuilder build = new StringBuilder();
+                final char quotedChar = arg.charAt(0);
+                int endIndex;
+                for (endIndex = i; endIndex < args.length; ++endIndex) {
+                    final String arg2 = args[endIndex];
+                    if (arg2.charAt(arg2.length() - 1) == quotedChar) {
+                        if (endIndex != i) build.append(' ');
+                        build.append(arg2.substring(endIndex == i ? 1 : 0, arg2.length() - 1));
+                        break;
+                    } else if (endIndex == i) {
+                        build.append(arg2.substring(1));
+                    } else {
+                        build.append(' ').append(arg2);
+                    }
+                }
+                args = removePortionOfArray(args, i, endIndex, build.toString());
+            }
+        }
+
+        if (valueFlags == null) {
+            valueFlags = Collections.emptySet();
+        }
+
+        // Then flags
+        for (int i = 1; i < args.length; ++i) {
+            final String arg = args[i];
+
+            if (arg.charAt(0) != '-') {
+                continue;
+            }
+
+            if (arg.equals("--")) {
+                args = removePortionOfArray(args, i, i, null);
                 break;
             }
 
-            // Handle flag parsing terminator --
-            if (arg.equals("--"))
-                break;
+            if (!arg.matches("^-[a-zA-Z]+$")) {
+                continue;
+            }
+            int index = i;
+            for (int k = 1; k < arg.length(); ++k) {
+                final char flagName = arg.charAt(k);
+                if (valueFlags.contains(flagName)) {
+                    if (this.valueFlags.containsKey(flagName)) {
+                        throw new CommandException("Value flag '" + flagName + "' already given");
+                    }
+                    index++;
+                    if (index >= args.length) {
+                        throw new CommandException("Value flag '" + flagName + "' specified without value");
+                    }
 
-            // Go through the flags
-            for (int i = 1; i < arg.length(); ++i) {
-                char flagName = arg.charAt(i);
-
-                if (isValueFlag.contains(flagName)) {
-                    // Skip empty arguments...
-                    while (nextArg < args.length && args[nextArg].isEmpty())
-                        ++nextArg;
-
-                    if (nextArg >= args.length)
-                        throw new CommandException("No value specified for the '-"+flagName+"' flag.");
-
-                    // If it is a value flag, read another argument and add it
-                    valueFlags.put(flagName, args[nextArg++]);
-                }
-                else {
+                    this.valueFlags.put(flagName, args[index]);
+                } else {
                     booleanFlags.add(flagName);
                 }
             }
+            args = removePortionOfArray(args, i, index, null);
         }
-
-        this.args = Arrays.copyOfRange(args, nextArg-1, args.length);
-        this.args[0] = args[0];
+        this.args = args;
     }
 
     public String getCommand() {
@@ -232,14 +227,5 @@ public class CommandContext {
 
     public int argsLength() {
         return args.length - 1;
-    }
-
-    public static String[] removePortionOfArray(String[] array, int from, int to, String replace) {
-        String[] newArray = new String[from + array.length - to - (replace == null ? 1 : 0)];
-        System.arraycopy(array, 0, newArray, 0, from);
-        if (replace != null) newArray[from] = replace;
-        System.arraycopy(array, to + (replace == null ? 0 : 1), newArray, from + (replace == null ? 0 : 1),
-                    array.length - to - 1);
-        return newArray;
     }
 }
