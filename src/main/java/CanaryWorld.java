@@ -541,7 +541,8 @@ public class CanaryWorld extends LocalWorld {
         double radiusSq = Math.pow(radius, 2);
         for (LivingEntity ent : world.getLivingEntityList()) {
             OEntity oent = ent.getEntity();
-            if (!killPets && oent instanceof OEntityWolf && ((OEntityWolf) oent).A()) {
+            //Notchian: Tamed wolf
+            if (!killPets && oent instanceof OEntityWolf && ((OEntityWolf) oent).z()) {
                 continue; // tamed wolf
             }
             if (oent instanceof OEntityCreature || oent instanceof OEntityGhast || oent instanceof OEntitySlime) {
@@ -565,34 +566,35 @@ public class CanaryWorld extends LocalWorld {
             if (radius != -1 && origin.distanceSq(vector) > radiusSq) {
                 continue;
             }
+            //Notchian: entity.bx (1.8.1)
             if (type == EntityType.ARROWS) {
                 if (ent.entity instanceof OEntityArrow) {
-                    ent.entity.bh = true;
+                    ent.entity.bx = true;
                     num++;
                 }
             } else if (type == EntityType.BOATS) {
                 if (ent.entity instanceof OEntityBoat) {
-                    ent.entity.bh = true;
+                    ent.entity.bx = true;
                     num++;
                 }
             } else if (type == EntityType.ITEMS) {
                 if (ent.entity instanceof OEntityItem) {
-                    ent.entity.bh = true;
+                    ent.entity.bx = true;
                     num++;
                 }
             } else if (type == EntityType.MINECARTS) {
                 if (ent.entity instanceof OEntityMinecart) {
-                    ent.entity.bh = true;
+                    ent.entity.bx = true;
                     num++;
                 }
             } else if (type == EntityType.PAINTINGS) {
                 if (ent.entity instanceof OEntityPainting) {
-                    ent.entity.bh = true;
+                    ent.entity.bx = true;
                     num++;
                 }
             } else if (type == EntityType.TNT) {
                 if (ent.entity instanceof OEntityTNTPrimed) {
-                    ent.entity.bh = true;
+                    ent.entity.bx = true;
                     num++;
                 }
             }
