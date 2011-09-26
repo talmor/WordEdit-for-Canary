@@ -388,10 +388,10 @@ public class CanaryWorld extends LocalWorld {
                 return false;
             if (!(complexBlock instanceof Furnace))
                 return false;
-            // Furnace furnace = (Furnace) complexBlock;
-            // TODO: Implement workaround for Canary
-            // furnace.setBurnTime(we.getBurnTime());
-            // furnace.setCookTime(we.getCookTime());
+            Furnace furnace = (Furnace) complexBlock;
+            FurnaceBlock we = (FurnaceBlock) block;
+            furnace.setBurnTime(we.getBurnTime());
+            furnace.setCookTime(we.getCookTime());
             return setContainerBlockContents(pt, ((ContainerBlock) block).getItems());
 
             // Chests/dispenser
@@ -408,9 +408,8 @@ public class CanaryWorld extends LocalWorld {
             MobSpawner ms = (MobSpawner) complexBlock;
             MobSpawnerBlock we = (MobSpawnerBlock) block;
             ms.setSpawn(we.getMobType());
-            //
-            //ms.setDelay(we.getDelay());
-            return true;
+            ms.setDelay(we.getDelay());
+           return true;
 
             // Note block
         } else if (block instanceof NoteBlock) {
@@ -444,9 +443,8 @@ public class CanaryWorld extends LocalWorld {
 
             Furnace furnace = (Furnace) complexBlock;
             FurnaceBlock we = (FurnaceBlock) block;
-            // TODO: Not implemented in Canary. Find workaround
-            // we.setBurnTime(furnace.getBurnTime());
-            // we.setCookTime(furnace.getCookTime());
+            we.setBurnTime(furnace.getBurnTime());
+            we.setCookTime(furnace.getCookTime());
             ((ContainerBlock) block).setItems(getContainerBlockContents(pt));
             return true;
 
@@ -465,8 +463,7 @@ public class CanaryWorld extends LocalWorld {
             MobSpawner ms = (MobSpawner) complexBlock;
             MobSpawnerBlock we = (MobSpawnerBlock) block;
             we.setMobType(ms.getSpawn());
-            //TODO: Canary can't access spawner.a
-            //we.setDelay((short) ms.spawner.a);
+            we.setDelay((short) ms.spawner.a);
             return true;
 
             // Note block
