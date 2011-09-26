@@ -79,8 +79,7 @@ public class WorldEdit {
      * without any WorldEdit abilities or never use WorldEdit in a session will
      * not have a session object generated for them.
      */
-    private HashMap<String,LocalSession> sessions =
-            new HashMap<String,LocalSession>();
+    private HashMap<String,LocalSession> sessions = new HashMap<String,LocalSession>();
     
     /**
      * Initialize statically.
@@ -113,13 +112,14 @@ public class WorldEdit {
                     final Logging loggingAnnotation = method.getAnnotation(Logging.class);
 
                     final Logging.LogMode logMode;
-                    if (loggingAnnotation == null)
+                    if (loggingAnnotation == null) {
                         logMode = null;
-                    else
+                    } else {
                         logMode = loggingAnnotation.value();
+                    }
 
-                    String msg = "WorldEdit: " + player.getName() + "(in " + player.getWorld().getName() + ")"
-                            + ": " + StringUtil.joinString(args, " ");
+                    String msg = "WorldEdit: " + player.getName() + " (in \"" + player.getWorld().getName()
+                            + "\")" + ": " + StringUtil.joinString(args, " ");
                     if (logMode != null) {
                         Vector position = player.getPosition();
                         final LocalSession session = getSession(player);
@@ -246,6 +246,11 @@ public class WorldEdit {
         }
     }
 
+    public BaseBlock getBlock(LocalPlayer player, String arg, boolean allAllowed)
+            throws UnknownItemException, DisallowedItemException {
+        return getBlock(player, arg, allAllowed, false);
+    }
+
     /**
      * Get an item ID from an item name or an item ID number.
      *
@@ -256,7 +261,8 @@ public class WorldEdit {
      * @throws UnknownItemException
      * @throws DisallowedItemException
      */
-    public BaseBlock getBlock(LocalPlayer player, String arg, boolean allAllowed)
+    public BaseBlock getBlock(LocalPlayer player, String arg,
+                              boolean allAllowed, boolean allowNoData)
             throws UnknownItemException, DisallowedItemException {
         BlockType blockType;
         arg = arg.replace("_", " ");
@@ -307,8 +313,8 @@ public class WorldEdit {
         if (data == -1) { // Block data not yet detected
             // Parse the block data (optional)
             try {
-                data = args1.length > 1 ? Integer.parseInt(args1[1]) : 0;
-                if (data > 15 || data < 0) {
+                data = args1.length > 1 ? Integer.parseInt(args1[1]) : (allowNoData ? -1 : 0);
+                if (data > 15 || (data < 0 && !(allAllowed && data == -1))) {
                     data = 0;
                 }
             } catch (NumberFormatException e) {
@@ -344,6 +350,11 @@ public class WorldEdit {
                         case COBBLESTONE:
                             data = 3;
                             break;
+                        case BRICK:
+                            data = 4;
+                            break;
+                        case STONE_BRICK:
+                            data = 5;
 
                         default:
                             throw new InvalidItemException(arg, "Invalid step type '" + args1[1] + "'");
@@ -377,17 +388,18 @@ public class WorldEdit {
             } else if (blockType == BlockType.MOB_SPAWNER) {
                 if (args0.length > 1) {
                     String mobName = args0[1];
-                    if (mobName.length() > 1) {
-                        mobName = mobName.substring(0, 1).toUpperCase()
-                                + mobName.substring(1);
+                    for (MobType mobType : MobType.values()){
+                        if (mobType.getName().toLowerCase().equals(mobName.toLowerCase())){
+                            mobName = mobType.getName();
+                            break;
+                        }
                     }
-                    
                     if (!server.isValidMobType(mobName)) {
                         throw new InvalidItemException(arg, "Unknown mob type '" + mobName + "'");
                     }
-                    return new MobSpawnerBlock(data, args0[1]);
+                    return new MobSpawnerBlock(data, mobName);
                 } else {
-                    return new MobSpawnerBlock(data, "Pig");
+                    return new MobSpawnerBlock(data, MobType.PIG.getName());
                 }
             
             // Allow setting note
@@ -424,14 +436,20 @@ public class WorldEdit {
         return getBlock(player, id, false);
     }
 
-    public Set<BaseBlock> getBlocks (LocalPlayer player, String list, boolean allAllowed)
+    public Set<BaseBlock> getBlocks (LocalPlayer player, String list,
+                                     boolean allAllowed, boolean allowNoData)
             throws DisallowedItemException, UnknownItemException {
         String[] items = list.split(",");
         Set<BaseBlock> blocks = new HashSet<BaseBlock>();
         for (String id : items) {
-            blocks.add(getBlock(player, id, allAllowed));
+            blocks.add(getBlock(player, id, allAllowed, allowNoData));
         }
         return blocks;
+    }
+
+    public Set<BaseBlock> getBlocks(LocalPlayer player, String list, boolean allAllowed)
+            throws DisallowedItemException, UnknownItemException {
+        return getBlocks(player, list, allAllowed);
     }
 
     public Set<BaseBlock> getBlocks(LocalPlayer player, String list)
@@ -672,8 +690,7 @@ public class WorldEdit {
             }
             
             if (!filename.matches("^[A-Za-z0-9_\\- \\./\\\\'\\$@~!%\\^\\*\\(\\)\\[\\]\\+\\{\\},\\?]+\\.[A-Za-z0-9]+$")) {
-                throw new InvalidFilenameException(filename,
-                        "Invalid characters or extension missing");
+                throw new InvalidFilenameException(filename, "Invalid characters or extension missing");
             }
             
             f = new File(dir, filename);
@@ -731,7 +748,7 @@ public class WorldEdit {
      * @return
      */
     public static int divisorMod(int a, int n) {
-        return (int)(a - n * Math.floor(Math.floor(a) / (double)n));
+        return (int) (a - n * Math.floor(Math.floor(a) / (double) n));
     }
 
     /**
@@ -1026,6 +1043,7 @@ public class WorldEdit {
                 && player.hasPermission("worldedit.navigation.jumpto")) {
             // Bug workaround
             // Blocks this from being used after the thru function
+            // @TODO do this right or make craftbukkit do it right
             if (!session.canUseJumpto()){
                 session.toggleJumptoBlock();
                 return false;
@@ -1067,8 +1085,9 @@ public class WorldEdit {
             }
             // Bug workaround, so it wont do the Jumpto compass function
             // Right after this teleport
-            if (session.canUseJumpto())
+            if (session.canUseJumpto()) {
                 session.toggleJumptoBlock();
+            }
             return true;
         }
         

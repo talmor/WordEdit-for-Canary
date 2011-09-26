@@ -18,15 +18,19 @@
 
 package com.sk89q.minecraft.util.commands;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import static com.sk89q.util.ArrayUtil.removePortionOfArray;
 
 public class CommandContext {
-    protected final String[] args;
+    protected final String command;
+    protected final List<String> parsedArgs;
+    protected final List<Integer> originalArgIndices;
+    protected final String[] originalArgs;
     protected final Set<Character> booleanFlags = new HashSet<Character>();
     protected final Map<Character, String> valueFlags = new HashMap<Character, String>();
 
@@ -48,19 +52,30 @@ public class CommandContext {
      * @throws CommandException This is thrown if flag fails for some reason.
      */
     public CommandContext(String[] args, Set<Character> valueFlags) throws CommandException {
-        // Go through empty args and multiword args first
+        if (valueFlags == null) {
+            valueFlags = Collections.emptySet();
+        }
+
+        originalArgs = args;
+        command = args[0];
+
+        // Eliminate empty args and combine multiword args first
+        List<Integer> argIndexList = new ArrayList<Integer>(args.length);
+        List<String> argList = new ArrayList<String>(args.length);
         for (int i = 1; i < args.length; ++i) {
-            final String arg = args[i];
+            String arg = args[i];
             if (arg.isEmpty()) {
-                args = removePortionOfArray(args, i, i, null);
                 continue;
             }
+
+            argIndexList.add(i);
 
             switch (arg.charAt(0)) {
             case '\'':
             case '"':
                 final StringBuilder build = new StringBuilder();
                 final char quotedChar = arg.charAt(0);
+
                 int endIndex;
                 for (endIndex = i; endIndex < args.length; ++endIndex) {
                     final String arg2 = args[endIndex];
@@ -74,102 +89,114 @@ public class CommandContext {
                         build.append(' ').append(arg2);
                     }
                 }
-                args = removePortionOfArray(args, i, endIndex, build.toString());
-            }
-        }
 
-        if (valueFlags == null) {
-            valueFlags = Collections.emptySet();
+                if (endIndex < args.length) {
+                    arg = build.toString();
+                    i = endIndex;
+                }
+                // else raise exception about hanging quotes?
+            }
+            argList.add(arg);
         }
 
         // Then flags
-        for (int i = 1; i < args.length; ++i) {
-            final String arg = args[i];
 
-            if (arg.charAt(0) != '-') {
+        this.originalArgIndices = new ArrayList<Integer>(argIndexList.size());
+        this.parsedArgs = new ArrayList<String>(argList.size());
+
+        for (int nextArg = 0; nextArg < argList.size(); ) {
+            // Fetch argument
+            String arg = argList.get(nextArg++);
+
+            // Not a flag?
+            if (arg.charAt(0) != '-' || arg.length() == 1 || !arg.matches("^-[a-zA-Z]+$")) {
+                originalArgIndices.add(argIndexList.get(nextArg-1));
+                parsedArgs.add(arg);
                 continue;
             }
 
+            // Handle flag parsing terminator --
             if (arg.equals("--")) {
-                args = removePortionOfArray(args, i, i, null);
+                while (nextArg < argList.size()) {
+                    originalArgIndices.add(argIndexList.get(nextArg));
+                    parsedArgs.add(argList.get(nextArg++));
+                }
                 break;
             }
 
-            if (!arg.matches("^-[a-zA-Z]+$")) {
-                continue;
-            }
-            int index = i;
-            for (int k = 1; k < arg.length(); ++k) {
-                final char flagName = arg.charAt(k);
+            // Go through the flag characters
+            for (int i = 1; i < arg.length(); ++i) {
+                char flagName = arg.charAt(i);
+
                 if (valueFlags.contains(flagName)) {
                     if (this.valueFlags.containsKey(flagName)) {
                         throw new CommandException("Value flag '" + flagName + "' already given");
                     }
-                    index++;
-                    if (index >= args.length) {
-                        throw new CommandException("Value flag '" + flagName + "' specified without value");
+
+                    if (nextArg >= argList.size()) {
+                        throw new CommandException("No value specified for the '-"+flagName+"' flag.");
                     }
 
-                    this.valueFlags.put(flagName, args[index]);
-                } else {
+                    // If it is a value flag, read another argument and add it
+                    this.valueFlags.put(flagName, argList.get(nextArg++));
+                }
+                else {
                     booleanFlags.add(flagName);
                 }
             }
-            args = removePortionOfArray(args, i, index, null);
         }
-        this.args = args;
     }
 
     public String getCommand() {
-        return args[0];
+        return command;
     }
 
     public boolean matches(String command) {
-        return args[0].equalsIgnoreCase(command);
+        return command.equalsIgnoreCase(command);
     }
 
     public String getString(int index) {
-        return args[index + 1];
+        return parsedArgs.get(index);
     }
 
     public String getString(int index, String def) {
-        return index + 1 < args.length ? args[index + 1] : def;
+        return index < parsedArgs.size() ? parsedArgs.get(index) : def;
     }
 
     public String getJoinedStrings(int initialIndex) {
-        initialIndex = initialIndex + 1;
-        StringBuilder buffer = new StringBuilder(args[initialIndex]);
-        for (int i = initialIndex + 1; i < args.length; ++i) {
-            buffer.append(" ").append(args[i]);
+        initialIndex = originalArgIndices.get(initialIndex);
+        StringBuilder buffer = new StringBuilder(originalArgs[initialIndex]);
+        for (int i = initialIndex + 1; i < originalArgs.length; ++i) {
+            buffer.append(" ").append(originalArgs[i]);
         }
         return buffer.toString();
     }
 
     public int getInteger(int index) throws NumberFormatException {
-        return Integer.parseInt(args[index + 1]);
+        return Integer.parseInt(parsedArgs.get(index));
     }
 
     public int getInteger(int index, int def) throws NumberFormatException {
-        return index + 1 < args.length ? Integer.parseInt(args[index + 1]) : def;
+        return index < parsedArgs.size() ? Integer.parseInt(parsedArgs.get(index)) : def;
     }
 
     public double getDouble(int index) throws NumberFormatException {
-        return Double.parseDouble(args[index + 1]);
+        return Double.parseDouble(parsedArgs.get(index));
     }
 
     public double getDouble(int index, double def) throws NumberFormatException {
-        return index + 1 < args.length ? Double.parseDouble(args[index + 1]) : def;
+        return index < parsedArgs.size() ? Double.parseDouble(parsedArgs.get(index)) : def;
     }
 
     public String[] getSlice(int index) {
-        String[] slice = new String[args.length - index];
-        System.arraycopy(args, index, slice, 0, args.length - index);
+        String[] slice = new String[originalArgs.length - index];
+        System.arraycopy(originalArgs, index, slice, 0, originalArgs.length - index);
         return slice;
     }
 
     public String[] getPaddedSlice(int index, int padding) {
-        String[] slice = new String[args.length - index + padding];
-        System.arraycopy(args, index, slice, padding, args.length - index);
+        String[] slice = new String[originalArgs.length - index + padding];
+        System.arraycopy(originalArgs, index, slice, padding, originalArgs.length - index);
         return slice;
     }
 
@@ -191,8 +218,9 @@ public class CommandContext {
 
     public String getFlag(char ch, String def) {
         final String value = valueFlags.get(ch);
-        if (value == null)
+        if (value == null) {
             return def;
+        }
 
         return value;
     }
@@ -203,8 +231,9 @@ public class CommandContext {
 
     public int getFlagInteger(char ch, int def) throws NumberFormatException {
         final String value = valueFlags.get(ch);
-        if (value == null)
+        if (value == null) {
             return def;
+        }
 
         return Integer.parseInt(value);
     }
@@ -215,17 +244,14 @@ public class CommandContext {
 
     public double getFlagDouble(char ch, double def) throws NumberFormatException {
         final String value = valueFlags.get(ch);
-        if (value == null)
+        if (value == null) {
             return def;
+        }
 
         return Double.parseDouble(value);
     }
 
-    public int length() {
-        return args.length;
-    }
-
     public int argsLength() {
-        return args.length - 1;
+        return parsedArgs.size();
     }
 }

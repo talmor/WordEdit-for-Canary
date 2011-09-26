@@ -1,7 +1,7 @@
 // $Id$
 /*
  * WorldEdit
- * Copyright (C) 2010 sk89q <http://www.sk89q.com>
+ * Copyright (C) 2010, 2011 sk89q <http://www.sk89q.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,32 +17,27 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
-package com.sk89q.worldedit.bags;
+package com.sk89q.worldedit.cui;
 
-/**
- *
- * @author sk89q
- */
-public class OutOfSpaceException extends BlockBagException {
-    private static final long serialVersionUID = -2962840237632916821L;
+public class SelectionMinMaxEvent implements CUIEvent {
+
+    protected int min;
+    protected int max;
     
-    /**
-     * Stores the block ID.
-     */
-    private int id;
-
-    /**
-     * Construct the object.
-     * @param id
-     */
-    public OutOfSpaceException(int id) {
-        this.id = id;
+    public SelectionMinMaxEvent(int min, int max) {
+        this.min = min;
+        this.max = max;
     }
 
-    /**
-     * @return the id
-     */
-    public int getID() {
-        return id;
+    public String getTypeId() {
+        return "mm";
     }
+
+    public String[] getParameters() {
+        return new String[] {
+                    String.valueOf(min),
+                    String.valueOf(max),
+                };
+    }
+
 }

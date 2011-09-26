@@ -23,7 +23,7 @@ import java.io.File;
 import com.sk89q.worldedit.bags.BlockBag;
 import com.sk89q.worldedit.blocks.BlockID;
 import com.sk89q.worldedit.blocks.BlockType;
-import com.sk89q.worldedit.blocks.ItemType;
+import com.sk89q.worldedit.blocks.ItemID;
 import com.sk89q.worldedit.cui.CUIEvent;
 import com.sk89q.worldedit.util.TargetBlock;
 
@@ -31,21 +31,21 @@ import com.sk89q.worldedit.util.TargetBlock;
  *
  * @author sk89q
  */
-public abstract class LocalPlayer {    
+public abstract class LocalPlayer {
     /**
      * Server.
      */
     protected ServerInterface server;
-    
+
     /**
      * Construct the object.
-     * 
+     *
      * @param server
      */
     protected LocalPlayer(ServerInterface server) {
         this.server = server;
     }
-    
+
     /**
      * Returns true if the player is holding a pick axe.
      *
@@ -53,11 +53,11 @@ public abstract class LocalPlayer {
      */
     public boolean isHoldingPickAxe() {
         int item = getItemInHand();
-        return item == ItemType.IRON_PICK.getID()
-                || item == ItemType.WOOD_PICKAXE.getID()
-                || item == ItemType.STONE_PICKAXE.getID()
-                || item == ItemType.DIAMOND_PICKAXE.getID()
-                || item == ItemType.GOLD_PICKAXE.getID();
+        return item == ItemID.IRON_PICK
+                || item == ItemID.WOOD_PICKAXE
+                || item == ItemID.STONE_PICKAXE
+                || item == ItemID.DIAMOND_PICKAXE
+                || item == ItemID.GOLD_PICKAXE;
     }
 
     /**
@@ -95,10 +95,10 @@ public abstract class LocalPlayer {
             ++y;
         }
     }
-    
+
     /**
      * Set the player on the ground.
-     * 
+     *
      * @param searchPos
      */
     public void setOnGround(WorldVector searchPos) {
@@ -153,7 +153,7 @@ public abstract class LocalPlayer {
                 ++spots;
                 if (spots == 2) {
                     int type = world.getBlockType(new Vector(x, y - 2, z));
-                    
+
                     // Don't get put in lava!
                     if (type == BlockID.LAVA || type == BlockID.STATIONARY_LAVA) {
                         return false;
@@ -204,7 +204,7 @@ public abstract class LocalPlayer {
                         setPosition(new Vector(x + 0.5, y + 1, z + 0.5));
                         return true;
                     }
-                    
+
                     --y;
                 }
 
@@ -219,7 +219,7 @@ public abstract class LocalPlayer {
 
     /**
      * Ascend to the ceiling above.
-     * 
+     *
      * @param clearance
      * @return whether the player was moved
      */
@@ -230,7 +230,7 @@ public abstract class LocalPlayer {
         int y = Math.max(0, pos.getBlockY() + 2);
         int z = pos.getBlockZ();
         LocalWorld world = getPosition().getWorld();
-        
+
         // No free space above
         if (world.getBlockType(new Vector(x, y, z)) != 0) {
             return false;
@@ -240,8 +240,7 @@ public abstract class LocalPlayer {
             // Found a ceiling!
             if (!BlockType.canPassThrough(world.getBlockType(new Vector(x, y, z)))) {
                 int platformY = Math.max(initialY, y - 3 - clearance);
-                world.setBlockType(new Vector(x, platformY, z),
-                        BlockID.GLASS);
+                world.setBlockType(new Vector(x, platformY, z), BlockID.GLASS);
                 setPosition(new Vector(x + 0.5, platformY + 1, z + 0.5));
                 return true;
             }
@@ -273,8 +272,7 @@ public abstract class LocalPlayer {
             } else if (y > maxY + 1) {
                 break;
             } else if (y == maxY + 1) {
-                world.setBlockType(new Vector(x, y - 2, z),
-                        BlockID.GLASS);
+                world.setBlockType(new Vector(x, y - 2, z), BlockID.GLASS);
                 setPosition(new Vector(x + 0.5, y - 1, z + 0.5));
                 return true;
             }
@@ -310,7 +308,7 @@ public abstract class LocalPlayer {
     /**
      * Get the point of the block being looked at. May return null.
      * Will return the farthest away air block if useLastBlock is true and no other block is found.
-     * 
+     *
      * @param range
      * @param useLastBlock
      * @return point
@@ -319,7 +317,11 @@ public abstract class LocalPlayer {
         TargetBlock tb = new TargetBlock(this, range, 0.2);
         return (useLastBlock ? tb.getAnyTargetBlock() : tb.getTargetBlock());
     }
-    
+
+    public WorldVectorFace getBlockTraceFace(int range, boolean useLastBlock) {
+        TargetBlock tb = new TargetBlock(this, range, 0.2);
+        return (useLastBlock ? tb.getAnyTargetBlockFace() : tb.getTargetBlockFace());
+    }
     /**
      * Get the point of the block being looked at. May return null.
      *
@@ -347,10 +349,12 @@ public abstract class LocalPlayer {
      * @return
      */
     public PlayerDirection getCardinalDirection() {
-        if (getPitch() > 67.5)
+        if (getPitch() > 67.5) {
             return PlayerDirection.DOWN;
-        if (getPitch() < -67.5)
+        }
+        if (getPitch() < -67.5) {
             return PlayerDirection.UP;
+        }
 
         // From hey0's code
         double rot = (getYaw() - 90) % 360;
@@ -362,7 +366,7 @@ public abstract class LocalPlayer {
 
     /**
      * Returns direction according to rotation. May return null.
-     * 
+     *
      * @param rot
      * @return
      */
@@ -464,38 +468,38 @@ public abstract class LocalPlayer {
         boolean firstBlock = true;
         int freeToFind = 2;
         boolean inFree = false;
-        
+
         while ((block = hitBlox.getNextBlock()) != null) {
             boolean free = BlockType.canPassThrough(world.getBlockType(block));
-            
+
             if (firstBlock) {
                 firstBlock = false;
-                
+
                 if (!free) {
                     --freeToFind;
                     continue;
                 }
             }
-            
+
             ++searchDist;
             if (searchDist > 20) {
                 return false;
             }
-            
+
             if (inFree != free) {
                 if (free) {
                     --freeToFind;
                 }
             }
-            
+
             if (freeToFind == 0) {
                 setOnGround(block);
                 return true;
             }
-            
+
             inFree = free;
         }
-        
+
         return false;
     }
 
@@ -547,29 +551,29 @@ public abstract class LocalPlayer {
 
     /**
      * Get a player's list of groups.
-     * 
+     *
      * @return
      */
     public abstract String[] getGroups();
-    
+
     /**
      * Get this player's block bag.
-     * 
+     *
      * @return
      */
     public abstract BlockBag getInventoryBlockBag();
-    
+
     /**
      * Checks if a player has permission.
-     * 
+     *
      * @param perm
      * @return
      */
     public abstract boolean hasPermission(String perm);
-    
+
     /**
      * Open a file open dialog.
-     * 
+     *
      * @param extensions null to allow all
      * @return
      */
@@ -577,10 +581,10 @@ public abstract class LocalPlayer {
         printError("File dialogs are not supported in your environment.");
         return null;
     }
-    
+
     /**
      * Open a file save dialog.
-     * 
+     *
      * @param extensions null to allow all
      * @return
      */
@@ -588,24 +592,24 @@ public abstract class LocalPlayer {
         printError("File dialogs are not supported in your environment.");
         return null;
     }
-    
+
     /**
      * Returns true if the player can destroy bedrock.
-     * 
+     *
      * @return
      */
     public boolean canDestroyBedrock() {
         return hasPermission("worldedit.override.bedrock");
     }
-    
+
     /**
      * Send a CUI event.
-     * 
+     *
      * @param event
      */
     public void dispatchCUIEvent(CUIEvent event) {
     }
-    
+
     /**
      * Send the CUI handshake.
      */

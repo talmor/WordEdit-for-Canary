@@ -39,7 +39,7 @@ public class MinecraftSetBlockProxy extends OWorld {
      * @param editSession
      */
     public MinecraftSetBlockProxy(EditSession editSession) {
-        super(null, "", (long)0, null);
+        super(null,"",null,null);
         throw new IllegalStateException("MinecraftSetBlockProxy constructor called (BAD)");
     }
 
